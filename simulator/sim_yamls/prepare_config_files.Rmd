@@ -30,7 +30,7 @@ template_files <- list.files(
 
 sim_names <- basename(template_files) |> tools::file_path_sans_ext()
 
-K <- 10
+K <- 2
 nRep <- 1
 settings <- expand_grid(
   sim_start_date = SIM_START_DATE,
