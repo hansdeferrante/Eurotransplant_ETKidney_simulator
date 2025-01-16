@@ -24,7 +24,7 @@ if __name__ == '__main__':
         os.path.join(
             es.DIR_SIM_SETTINGS,
             '2025-01-16',
-            'CurrentETKAS_filtered_age_matching_muted_1_1.yml'
+            'CurrentETKAS_vPRA_sliding_scale_b2_100p_1_1.yml'
         )
     )
     # Read in simulation settings

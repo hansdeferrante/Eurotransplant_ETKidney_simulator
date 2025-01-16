@@ -22,7 +22,7 @@ PATH_ALLELE_FREQUENCIES_BROAD: simulator/magic_values/allele_frequencies_broad.y
 PATH_ALLELE_FREQUENCIES_SPLIT: simulator/magic_values/allele_frequencies_split.yaml
 PATH_BG_FREQUENCIES: simulator/magic_values/bg_frequencies.yaml
 PATH_GEOGRAPHIC_DEFS: simulator/magic_values/geographic_definitions/geographic_definitions.yml
-PATH_MATCH_POTENTIALS: data/fake_matched_haplotype_frequencies.csv
+PATH_MATCH_POTENTIALS: data/fake_favorably_matched_haplotype_frequencies.csv
 
 # Graft offering module
 SIMULATE_RESCUE: true
