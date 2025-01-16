@@ -1,0 +1,122 @@
+---
+title: "R Notebook"
+output: html_document
+---
+
+
+```{r}
+here::i_am('.here')
+pacman::p_load(readtext, here, magrittr, glue, dplyr, stringr, tidyr, purrr, readr)
+```
+
+```{r settings}
+# K replications per setting.
+path_to_sim <- here('simulator')
+if (!dir.exists(paste(path_to_sim, 'results', Sys.Date(), sep = '/'))) dir.create(paste(path_to_sim, 'results', Sys.Date(), sep = '/'), recursive = TRUE)
+if (!dir.exists(paste(path_to_sim, 'sim_yamls', Sys.Date(), sep = '/'))) dir.create(paste(path_to_sim, 'sim_yamls', Sys.Date(), sep = '/'), recursive = TRUE)
+```
+
+```{r}
+SIM_START_DATE <- '2014-01-01'
+SIM_END_DATE <- '2016-01-01'
+BALANCE_START_DATE <- '2014-01-01'
+```
+
+```{r}
+template_files <- list.files(
+  here('simulator', 'sim_yamls', 'templates'),
+  full.names = TRUE
+  )
+
+sim_names <- basename(template_files) |> tools::file_path_sans_ext()
+
+K <- 10
+nRep <- 1
+settings <- expand_grid(
+  sim_start_date = SIM_START_DATE,
+  sim_end_date = SIM_END_DATE,
+  load_retxs_from = SIM_START_DATE,
+  load_retxs_to = '2024-01-01',
+  kth_stat = 1:K,
+  rep = 1:nRep,
+  template_path = template_files
+  ) %>%
+  mutate(sim_seed = kth_stat * rep) %>%
+  filter(!(str_detect(template_path, '_dev') & (kth_stat > 1 | rep > 5))) %>%
+  mutate(sim_name = basename(template_path) |> tools::file_path_sans_ext()) %>%
+  mutate(date = as.character(Sys.Date())) %>%
+  mutate(new_template_name = tools::file_path_sans_ext(basename(template_path))) %>%
+  mutate(k='k', s = 's') %>%
+  unite(new_template_name, sim_name, kth_stat, sim_seed, remove=FALSE, sep = '_') %>%
+  mutate(new_template_name = paste(new_template_name, 'yml', sep='.')) %>%
+  mutate(new_template_path = paste(path_to_sim, 'sim_yamls', Sys.Date(), new_template_name, sep = '/')) %>%
+  mutate(save_match_lists = ifelse(kth_stat == 1, TRUE, FALSE)) |>
+  mutate(store_components = ifelse(kth_stat == 1, TRUE, FALSE)) |>
+  mutate(balance_start_time = BALANCE_START_DATE) |>
+  select(-new_template_name)
+
+settings$k <- NULL
+settings$s <- NULL
+
+settings <- filter(
+  settings,
+  !str_detect(sim_name, 'always')
+)
+
+names(settings)
+```
+
+```{r}
+settings <- filter(settings, !str_detect(sim_name, 'highest'))
+```
+
+
+```{r}
+for (sn in sim_names) {
+  dn <- here('simulator', 'results', Sys.Date(), sn)
+  if (!dir.exists(dn)) {
+    dir.create(dn)
+  }
+}
+```
+
+
+```{r}
+# K replications per setting.
+path_to_sim <- here('simulator')
+if (!dir.exists(paste(path_to_sim, 'results', Sys.Date(), sep = '/'))) dir.create(paste(path_to_sim, 'results', Sys.Date(), sep = '/'), recursive = TRUE)
+if (!dir.exists(paste(path_to_sim, 'sim_yamls', Sys.Date(), sep = '/'))) dir.create(paste(path_to_sim, 'sim_yamls', Sys.Date(), sep = '/'), recursive = TRUE)
+```
+
+
+```{r}
+prepare_config_file <- function(sim_name, sim_seed, sim_start_date, kth_stat, save_match_lists,
+                                allocation_algorithm, search_approach, template_path, new_template_path, load_retxs_to, load_retxs_from,
+                                store_components, balance_start_time, sim_end_date,
+                                date = Sys.Date(), ...) {
+  
+  tmp <- read_lines(template_path)
+  
+  for ( i in seq_along(tmp)) {
+    tmp[i] <- glue(tmp[i], .open = '{{', .close='}}')
+  }
+  
+  write_lines(
+    tmp,
+    new_template_path
+  )
+  
+}
+```
+
+
+```{r}
+settings %>% split(1:nrow(.)) %>%
+  map(unlist) %>%
+  walk(
+    ~ eval(rlang::expr(prepare_config_file(!!!.x)))
+  )
+```
+
+
+

@@ -1,0 +1,21 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Data directories
+data/
+raw_data/
+
+# Old files
+old/
+*/old/*
+
+*files_to_knit*
+*/data_Tayob/*
+
+# Result files
+*/results/202*
+
+# Formatted .yaml files
+*/sim_yamls/202*

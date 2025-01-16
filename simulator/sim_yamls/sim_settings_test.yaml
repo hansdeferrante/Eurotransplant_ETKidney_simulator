@@ -1,0 +1,89 @@
+SEED: 1
+SIM_START_DATE: 2016-01-01
+SIM_END_DATE: 2020-01-01
+LOAD_RETXS_FROM: 2004-01-01
+LOAD_RETXS_TO: 2020-01-01
+KTH_STATUS_FILE: 1
+SEED: 1
+POINTS_ETKAS:
+  YEARS_ON_DIAL: 33.333333
+  PREVIOUS_WT_YEARS: 33.333333
+  INTERCEPT: 400
+  MMB_HLA_A: -66.66666
+  MMB_HLA_B: -66.66666
+  MMS_HLA_DR: -66.66667
+  INTERCEPT:R_PEDIATRIC: 400
+  MMB_HLA_A:R_PEDIATRIC: -66.66666
+  MMB_HLA_B:R_PEDIATRIC: -66.66666
+  MMS_HLA_DR:R_PEDIATRIC: -66.66667
+  ET_MMP: 1
+  BAL_NAT: 10
+  BAL_REG: 1
+  MATCH_L: 300
+  MATCH_N: 100
+  R_PEDIATRIC: 100
+  PATIENT_IS_HU: 500
+POINTS_ESP:
+  YEARS_ON_DIAL: 365
+  PREVIOUS_WT_YEARS: 365
+  INTERCEPT: 0
+LOCI_ZERO_MISMATCH:
+  !!python/tuple [mmb_hla_a, mmb_hla_b, mms_hla_dr]
+LOCI_MMP_SPLIT:
+  !!python/tuple [hla_dr]
+LOCI_MMP_BROAD:
+  !!python/tuple [hla_a, hla_b]
+BALANCE_GROUP_VARS: null
+  #!!python/tuple [d_bloodgroup]
+COUNTRIES_WITH_REGIONS:
+  !!python/tuple [Austria, Belgium, Germany]
+WINDOW_FOR_BALANCE: 365
+STARTTIME_FOR_BALANCE: 2019-04-01
+PATH_ALLELE_FREQUENCIES_BROAD: simulator/magic_values/allele_frequencies_broad.yaml
+PATH_ALLELE_FREQUENCIES_SPLIT: simulator/magic_values/allele_frequencies_split.yaml
+PATH_BG_FREQUENCIES: simulator/magic_values/bg_frequencies.yaml
+PATH_GEOGRAPHIC_DEFS: simulator/magic_values/geographic_definitions/geographic_definitions.yml
+PATH_ESP_TIERS: simulator/magic_values/allocation/2021_ESP_match_tiers.yml
+PATH_ETKAS_TIERS: simulator/magic_values/allocation/ETKAS_match_tiers.yml
+PATH_MATCH_TABLE: simulator/magic_values/et_match_table_all.csv
+PATH_OFFERS: ../raw_data/all_match_lists.csv
+PATH_DONORS: data/fake_donors_for_etkidney_simulator.csv
+PATH_DONOR_POOL: data/fake_donorpool_for_etkidney_simulator.csv
+PATH_MATCH_POTENTIALS: data/fake_favorably_matched_haplotype_frequencies.csv
+PATH_BALANCES: data/fake_donors_for_balances_for_etkidney_simulator.csv
+PATH_PROFILES: data/fake_profiles_for_etkidney_simulator.csv
+PATH_PATIENTS: data/fake_patients_for_etkidney_simulator.csv
+PATH_FINAL_PATIENT_STATUS: patients_k1_s1.csv
+PATH_STATUS_UPDATES: data/patient_statuses/patstat1.csv
+PATH_DISCARDS: discards_k1_s1.csv
+PATH_TRANSPLANTATIONS: transplantations_k1_s1.csv
+SAVE_MATCH_LISTS: false
+PATH_MATCH_LISTS: match_lists_k1_s1.csv
+PATH_EXITS: exits_k1_s1.csv
+CENTER_ACC_POLICY: 'LR'
+PATIENT_ACC_POLICY: 'LR'
+RESULTS_FOLDER: ''
+SIMULATE_RANDOM_EFFECTS: true
+JOINT_RANDOM_EFFECTS: false
+VARCOMPS_RANDOM_EFFECTS:
+  etkas_rd:
+    id_registration: 0.51657
+    recipient_center: 0.40067
+    id_donor: 0.66371
+  etkas_cd:
+    id_donor: 0.63564
+    recipient_center: 0.57380
+  esp_rd:
+    id_donor: 0.47369
+    id_registration: 0.48121
+    recipient_center: 0.49370
+  esp_cd:
+    id_donor: 0.49677
+    recipient_center: 0.80775
+PEDIATRIC_CANDIDATE_AGE: 18
+PEDIATRIC_DONOR_AGE: 16
+USE_REAL_DM: true
+USE_REAL_FU: false
+USE_REAL_SE: true
+SIM_RETX: true
+SIMULATE_RESCUE: true

@@ -1,0 +1,15 @@
+D3:
+- !!python/tuple [zero_mismatch, true]
+- !!python/tuple [r_homozygosity_level, 3]
+D2:
+- !!python/tuple [zero_mismatch, true]
+- !!python/tuple [r_homozygosity_level, 2]
+D1:
+- !!python/tuple [zero_mismatch, true]
+- !!python/tuple [r_homozygosity_level, 1]
+D0:
+- !!python/tuple [zero_mismatch, true]
+- !!python/tuple [r_homozygosity_level, 0]
+C:
+- !!python/tuple [r_pediatric, true]
+- !!python/tuple [d_pediatric, true]

@@ -1,0 +1,107 @@
+Austria:
+  I1:
+  - !!python/tuple [patient_esp_aged, false]
+  - !!python/tuple [esp_match_location, A]
+  E2:
+  - !!python/tuple [patient_esp_aged, false]
+  - !!python/tuple [match_lsr, 1]
+  G3:
+  - !!python/tuple [patient_esp_aged, false]
+  A1:
+  - !!python/tuple [esp_match_location, L]
+  F2:
+  - !!python/tuple [esp_match_location, H]
+  H3:
+  - !!python/tuple [esp_match_location, A]
+Belgium:
+  I1:
+  - !!python/tuple [patient_esp_aged, false]
+  - !!python/tuple [esp_match_location, A]
+  E2:
+  - !!python/tuple [patient_esp_aged, false]
+  - !!python/tuple [match_lsr, 1]
+  G3:
+  - !!python/tuple [patient_esp_aged, false]
+  A1:
+  - !!python/tuple [esp_match_location, L]
+  D1:
+  - !!python/tuple [esp_match_location, R]
+  D2:
+  - !!python/tuple [esp_match_location, H]
+  H1:
+  - !!python/tuple [esp_match_location, A]
+Croatia:
+  I1:
+  - !!python/tuple [patient_esp_aged, false]
+  - !!python/tuple [match_i, true]
+  E2:
+  - !!python/tuple [patient_esp_aged, false]
+  - !!python/tuple [match_lsr, 1]
+  G3:
+  - !!python/tuple [patient_esp_aged, false]
+  D5:
+  - !!python/tuple [esp_match_location, H]
+  H6:
+  - !!python/tuple [esp_match_location, A]
+Germany:
+  I1:
+  - !!python/tuple [patient_esp_aged, false]
+  - !!python/tuple [esp_match_location, A]
+  E2:
+  - !!python/tuple [patient_esp_aged, false]
+  - !!python/tuple [match_lsr, 1]
+  G3:
+  - !!python/tuple [patient_esp_aged, false]
+  B4:
+  - !!python/tuple [kidney_program, ESP]
+  - !!python/tuple [match_subregional, 1]
+  C5:
+  - !!python/tuple [kidney_program, ESP]
+  - !!python/tuple [esp_match_location, R]
+  E6:
+  - !!python/tuple [match_lsr, 1]
+  F7:
+  - !!python/tuple [esp_match_location, H]
+  H8:
+  - !!python/tuple [esp_match_location, A]
+Hungary:
+  I1:
+  - !!python/tuple [patient_esp_aged, false]
+  - !!python/tuple [match_i, true]
+  E2:
+  - !!python/tuple [patient_esp_aged, false]
+  - !!python/tuple [match_lsr, 1]
+  G3:
+  - !!python/tuple [patient_esp_aged, false]
+  B4:
+  - !!python/tuple [esp_match_location, S]
+  D5:
+  - !!python/tuple [esp_match_location, H]
+  H6:
+  - !!python/tuple [esp_match_location, A]
+Netherlands:
+  I1:
+  - !!python/tuple [patient_esp_aged, false]
+  - !!python/tuple [match_i, true]
+  E2:
+  - !!python/tuple [patient_esp_aged, false]
+  - !!python/tuple [match_lsr, 1]
+  G3:
+  - !!python/tuple [patient_esp_aged, false]
+  D5:
+  - !!python/tuple [esp_match_location, H]
+  H6:
+  - !!python/tuple [esp_match_location, A]
+Slovenia:
+  I1:
+  - !!python/tuple [patient_esp_aged, false]
+  - !!python/tuple [match_i, true]
+  E2:
+  - !!python/tuple [patient_esp_aged, false]
+  - !!python/tuple [match_lsr, 1]
+  G3:
+  - !!python/tuple [patient_esp_aged, false]
+  D5:
+  - !!python/tuple [esp_match_location, H]
+  H6:
+  - !!python/tuple [esp_match_location, A]

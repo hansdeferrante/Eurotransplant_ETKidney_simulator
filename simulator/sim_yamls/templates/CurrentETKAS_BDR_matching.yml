@@ -1,0 +1,175 @@
+# Simulation settings
+SEED: {{sim_seed}}
+SIM_START_DATE: {{sim_start_date}}
+SIM_END_DATE: {{sim_end_date}}
+USE_REAL_FU: false
+SIM_RETX: true
+
+# Paths to input data streams
+PATH_DONORS: data/fake_donors_for_etkidney_simulator.csv
+PATH_PATIENTS: data/fake_patients_for_etkidney_simulator.csv
+PATH_STATUS_UPDATES: data/patient_statuses/fake_patstat{{kth_stat}}_for_etkidney_simulator.csv
+PATH_PROFILES: data/fake_profiles_for_etkidney_simulator.csv
+PATH_BALANCES: data/fake_donors_for_balances_for_etkidney_simulator.csv
+PATH_PROGRAM_UPDATES: data/fake_program_updates_for_etkidney_simulator.csv
+PATH_DONOR_POOL: data/fake_donorpool_for_etkidney_simulator.csv
+
+# Paths to general simulation settings (modifiable files)
+PATH_MATCH_TABLE: simulator/magic_values/et_match_table_all.csv
+PATH_ETKAS_TIERS: simulator/magic_values/allocation/ETKAS_match_tiers.yml
+PATH_ESP_TIERS: simulator/magic_values/allocation/2021_ESP_match_tiers.yml
+PATH_ALLELE_FREQUENCIES_BROAD: simulator/magic_values/allele_frequencies_broad.yaml
+PATH_ALLELE_FREQUENCIES_SPLIT: simulator/magic_values/allele_frequencies_split.yaml
+PATH_BG_FREQUENCIES: simulator/magic_values/bg_frequencies.yaml
+PATH_GEOGRAPHIC_DEFS: simulator/magic_values/geographic_definitions/geographic_definitions.yml
+PATH_MATCH_POTENTIALS: data/fake_matched_haplotype_frequencies.csv
+
+# Graft offering module
+SIMULATE_RESCUE: true
+CENTER_ACC_POLICY: 'LR'
+PATIENT_ACC_POLICY: 'LR'
+ALLOW_DISCARDS: false
+SIMULATE_RANDOM_EFFECTS: true
+JOINT_RANDOM_EFFECTS: false
+VARCOMPS_RANDOM_EFFECTS:
+  etkas_rd:
+    id_registration: 0.51224
+    recipient_center: 0.40017
+    id_donor: 0.67014
+  etkas_cd:
+    id_donor: 0.63198
+    recipient_center: 0.57398
+  esp_rd:
+    id_donor: 1.69222
+    id_registration: 0.45213
+    recipient_center: 0.82223
+  esp_cd:
+    id_donor: 0.20845
+    recipient_center: 0.55113
+  etkas_rd:
+    id_registration: 0.51224
+    recipient_center: 0.40017
+    id_donor: 0.67014
+  etkas_cd:
+    id_donor: 0.63198
+    recipient_center: 0.57398
+  esp_rd:
+    id_donor: 1.69222
+    id_registration: 0.45213
+    recipient_center: 0.82223
+  esp_cd:
+    id_donor: 0.20845
+    recipient_center: 0.55113
+MAX_OFFERS_PER_CENTER:
+  ESP: 10
+  ETKAS: 5
+
+# Post-transplant module
+LOAD_RETXS_FROM: 2004-01-01
+LOAD_RETXS_TO: 2024-01-01
+
+# Balance system
+WINDOW_FOR_BALANCE: 99999
+STARTTIME_FOR_BALANCE: {{balance_start_time}}
+REMOVE_BALANCES_BEFORE_STARTTIME: True
+BALANCE_GROUP_VARS:
+  !!python/tuple [donor_age_group_bal]
+
+# Specific ETKAS and ESP allocation system settings
+POINTS_ETKAS:
+  YEARS_ON_DIAL: 33.333333
+  PREVIOUS_WT_YEARS: 33.333333
+  INTERCEPT: 400
+  MMB_HLA_A: 0
+  MMB_HLA_B: -100
+  MMS_HLA_DR: -100
+  INTERCEPT:R_PEDIATRIC: 400
+  MMB_HLA_A:R_PEDIATRIC: 0
+  MMB_HLA_B:R_PEDIATRIC: -100
+  MMS_HLA_DR:R_PEDIATRIC: -100
+  ET_MMP: 1
+  BAL_NAT: 30
+  BAL_REG: 1
+  MATCH_L: 300
+  MATCH_N: 100
+  R_PEDIATRIC: 100
+  PATIENT_IS_HU: 500
+  YEARS_ON_DIAL: 33.333333
+  PREVIOUS_WT_YEARS: 33.333333
+  INTERCEPT: 400
+  MMB_HLA_A: -66.66666
+  MMB_HLA_B: -66.66666
+  MMS_HLA_DR: -66.66667
+  INTERCEPT:R_PEDIATRIC: 400
+  MMB_HLA_A:R_PEDIATRIC: -66.66666
+  MMB_HLA_B:R_PEDIATRIC: -66.66666
+  MMS_HLA_DR:R_PEDIATRIC: -66.66667
+  ET_MMP: 1
+  BAL_NAT: 30
+  BAL_REG: 1
+  MATCH_L: 300
+  MATCH_N: 100
+  R_PEDIATRIC: 100
+  PATIENT_IS_HU: 500
+POINTS_ESP:
+  YEARS_ON_DIAL: 33.333333
+  PREVIOUS_WT_YEARS: 33.333333
+  INTERCEPT: 0
+  YEARS_ON_DIAL: 33.333333
+  PREVIOUS_WT_YEARS: 33.333333
+  INTERCEPT: 0
+PEDIATRIC_CANDIDATE_AGE: 18
+PEDIATRIC_DONOR_AGE: 18
+PEDIATRIC_REQUIRES_DIALYSIS: True
+DONOR_AGE_ESP_ELIGIBLE:
+  Austria: 65
+  Belgium: 65
+  Croatia: 65
+  Germany: 65
+  Hungary: 65
+  Netherlands: 65
+  Slovenia: 65
+  Austria: 65
+  Belgium: 65
+  Croatia: 65
+  Germany: 65
+  Hungary: 65
+  Netherlands: 65
+  Slovenia: 65
+CAND_AGE_ESP_ELIGIBLE:
+  Austria: 65
+  Belgium: 65
+  Croatia: 65
+  Germany: 65
+  Hungary: 65
+  Netherlands: 65
+  Slovenia: 65
+  Austria: 65
+  Belgium: 65
+  Croatia: 65
+  Germany: 65
+  Hungary: 65
+  Netherlands: 65
+  Slovenia: 65
+LOCI_ZERO_MISMATCH:
+  !!python/tuple [mmb_hla_a, mmb_hla_b, mms_hla_dr]
+LOCI_MMP_SPLIT:
+  !!python/tuple [hla_dr]
+LOCI_MMP_BROAD:
+  !!python/tuple [hla_a, hla_b]
+COUNTRIES_WITH_REGIONS:
+  !!python/tuple [Austria, Belgium, Germany]
+
+# Simulation outputs
+RESULTS_FOLDER: simulator/results/{{date}}/{{sim_name}}/
+PATH_MATCH_LISTS: match_lists_k{{kth_stat}}_s{{sim_seed}}.csv
+PATH_DISCARDS: discards_k{{kth_stat}}_s{{sim_seed}}.csv
+PATH_FINAL_PATIENT_STATUS: patients_k{{kth_stat}}_s{{sim_seed}}.csv
+PATH_TRANSPLANTATIONS: transplantations_k{{kth_stat}}_s{{sim_seed}}.csv
+PATH_EXITS: exits_k{{kth_stat}}_s{{sim_seed}}.csv
+SAVE_MATCH_LISTS: {{save_match_lists}}
+STORE_SCORE_COMPONENTS: {{store_components}}
+MATCHES_AT_TRANSPLANT_BROAD:
+  !!python/tuple [hla_dqb]
+MATCHES_AT_TRANSPLANT_SPLIT:
+  !!python/tuple [hla_dqb]

@@ -1,0 +1,233 @@
+# Country center codes
+FL_CENTER_CODES:
+  A: Austria
+  B: Belgium
+  C: Croatia
+  G: Germany
+  H: Hungary
+  L: Belgium
+  N: Netherlands
+  S: Slovenia
+  O: Other
+
+# German region codes
+GERMAN_REGIONS:
+  - GBW  # Baden-Württemberg
+  - GND  # Niedersachsen
+  - GNO  # Nord-Ost
+  - GNW  # Nordrhein-Westfalen
+  - GOS  # Ost
+  - GMI  # Mitte
+  - GBY  # Bayern
+
+CENTERS_TO_REGIONS:
+  # Austria
+  AWGTP: Vienna
+  AIBTP: AIB
+  AOETP: Upper Austria
+  AOLTP: Upper Austria
+  AOWTP: Upper Austria
+  AWDTP: Vienna
+  AGATP: AGA
+  AKTTP: Vienna
+
+  # Belgium
+  BLMTP: Bel_2
+  BGETP: Bel_2
+  BLETP: Bel_2
+  BASTP: Bel_2
+  BBCTP: BBC
+  BBPTP: BBP
+  BBRTP: BBR
+  BLGTP: Bel_1
+  BANTP: Bel_1
+  BLATP: BLA
+  BBJTP: Bel_1
+  LLXTP: Bel_1
+
+  # Croatia
+  CHROR: Croatia
+  COSTP: Croatia
+  CRITP: Croatia
+  CZATP: Croatia
+  CZDTP: Croatia
+  CZMTP: Croatia
+  CZKTP: Croatia
+  COSKI: Croatia
+
+  # Hungary
+  HUNOR: Hungary
+  HPCTP: Hungary
+  HBSTP: Hungary
+  HDBTP: Hungary
+  HBCTP: Hungary
+  HSZTP: Hungary
+
+  # Netherlands
+  NAMTP: Netherlands
+  NNYTP: Netherlands
+  NGRTP: Netherlands
+  NAWTP: Netherlands
+  NAVTP: Netherlands
+  NRDTP: Netherlands
+  NUTTP: Netherlands
+  NUWTP: Netherlands
+  NLBTP: Netherlands
+  NMSTP: Netherlands
+  NRSTP: Netherlands
+
+  # Slovenia
+  SLOTP: SLO
+
+  # Germany by region
+  # GBW - Baden-Württemberg
+  GBWOR: GBW
+  GFRTP: GBW
+  GHBTP: GBW
+  GMATP: GBW
+  GSTTP: GBW
+  GTUTP: GBW
+  GULTP: GBW
+
+  # GBY - Bayern
+  GAUTP: GBY
+  GBYOR: GBY
+  GDMTP: GBY
+  GERTP: GBY
+  GKRTP: GBY
+  GMDTP: GBY
+  GMHTP: GBY
+  GMLTP: GBY
+  GNBTP: GBY
+  GRBTP: GBY
+  GWZTP: GBY
+
+  # GMI - Mitte
+  GFDTP: GMI
+  GFMTP: GMI
+  GGITP: GMI
+  GHSTP: GMI
+  GKSTP: GMI
+  GMIOR: GMI
+  GMRTP: GMI
+  GMZTP: GMI
+
+  # GND - Niedersachsen
+  GBMTP: GND
+  GGOTP: GND
+  GHGTP: GND
+  GHMTP: GND
+  GHOTP: GND
+  GKITP: GND
+  GLUTP: GND
+  GNDOR: GND
+
+  # GNO - Nord-Ost
+  GBCTP: GNO
+  GBDTP: GNO
+  GBETP: GNO
+  GMBTP: GNO
+  GNOOR: GNO
+  GROTP: GNO
+
+  # GNW - Nordrhein-Westfalen
+  GAKTP: GNW
+  GBATP: GNW
+  GBBTP: GNW
+  GBOTP: GNW
+  GDUTP: GNW
+  GESTP: GNW
+  GKKTP: GNW
+  GKLTP: GNW
+  GKMTP: GNW
+  GMNTP: GNW
+  GNWOR: GNW
+
+  # GOS - Ost
+  GDRTP: GOS
+  GEFTP: GOS
+  GHATP: GOS
+  GJETP: GOS
+  GLPTP: GOS
+  GMBTP: GOS
+  GOSOR: GOS
+
+ESP_SUBREGIONS:
+  # Baden-Württemberg (GBW)
+  GHBTP: STUTTGART
+  GMATP: STUTTGART
+  GSTTP: STUTTGART
+  GTUTP: STUTTGART
+  GSTOS: STUTTGART
+  GFRTP: FREIBURG
+  GFROS: FREIBURG
+
+  # Bayern (GBY)
+  GAUTP: MUNCHEN
+  GMHTP: MUNCHEN
+  GMLTP: MUNCHEN
+  GRBTP: MUNCHEN
+  GKRTP: MUNCHEN
+  GMLOS: MUNCHEN
+  GNBTP: ERLANGEN
+  GWZTP: ERLANGEN
+  GEROS: ERLANGEN
+
+  # Mitte (GMI)
+  GFMTP: MAINZ
+  GMZTP: MAINZ
+  GMZOS: MAINZ
+  GHSTP: HOMBURG
+  GKSTP: HOMBURG
+  GHSOS: HOMBURG
+  GFDTP: MARBURG
+  GGITP: MARBURG
+  GMRTP: MARBURG
+  GMROS: MARBURG
+
+  # Nord (GND)
+  GBMTP: HANNOVER
+  GHOTP: HANNOVER
+  GHMTP: HANNOVER
+  GHOOS: HANNOVER
+  GHGTP: HAMBURG
+  GKITP: HAMBURG
+  GLUTP: HAMBURG
+  GHGOS: HAMBURG
+
+  # Nord-Ost (GNO)
+  GBETP: BERLIN
+  GBCTP: BERLIN
+  GBEOS: BERLIN
+  GROTP: ROSTOCK
+  GROOS: ROSTOCK
+
+  # Nordrhein-Westfalen (GNW)
+  GBBTP: DUSSELDORF
+  GDUTP: DUSSELDORF
+  GESTP: DUSSELDORF
+  GDUOS: DUSSELDORF
+  GAKTP: KOLNBONN
+  GBOTP: KOLNBONN
+  GKLTP: KOLNBONN
+  GKMTP: KOLNBONN
+  GKBOS: KOLNBONN
+  GMNTP: MUENSTER
+  GMNOS: MUENSTER
+
+  # Ost (GOS)
+  GDRTP: LEIPZIG
+  GHATP: LEIPZIG
+  GJETP: LEIPZIG
+  GLPTP: LEIPZIG
+  GLPOS: LEIPZIG
+
+  # Hungary
+  HSZ: HSZ
+  HSZTP: HSZ
+  HPC: HPC
+  HPCTP: HPC
+  HBS: HBS
+  HBSTP: HBS
+  HDB: HDB
+  HDBTP: HDB
