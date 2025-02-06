@@ -160,7 +160,7 @@ class BalanceSystem:
                 for balances_by_country in self.national_balances.values():
                     for balances in balances_by_country.values():
                         if balances:
-                            while balances[0].txp_expiry_time < current_time:
+                            while (balances and balances[0].txp_expiry_time < current_time):
                                 balances.popleft()
                 self._first_expiry = None
 

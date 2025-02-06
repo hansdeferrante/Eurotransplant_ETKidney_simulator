@@ -157,6 +157,9 @@ LOCI_MMP_SPLIT:
   !!python/tuple [hla_dr]
 LOCI_MMP_BROAD:
   !!python/tuple [hla_a, hla_b]
+UNSPLITTABLES:
+  DR3:
+    [DR17, DR18]
 COUNTRIES_WITH_REGIONS:
   !!python/tuple [Austria, Belgium, Germany]
 

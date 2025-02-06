@@ -16,6 +16,9 @@ from copy import copy
 from collections import defaultdict
 from copy import deepcopy
 
+from functools import reduce
+from operator import or_
+
 import simulator.magic_values.etkidney_simulator_settings as es
 import simulator.magic_values.magic_values_rules as mgr
 import simulator.magic_values.column_names as cn
@@ -129,6 +132,9 @@ class HLAProfile:
         Dict[str, FrozenSet[str]],
         Optional[Dict[str, FrozenSet[str]]]
     ]:
+        """
+        Initialize a candidates HLA typings, based on an input HLA string
+        """
         hla_system = self.hla_system
 
         alleles = defaultdict(set)
@@ -141,13 +147,13 @@ class HLAProfile:
                 if code in hla_system.codes_to_broad:
                     locus, broad = hla_system.codes_to_broad[code]
                     broads[locus].add(broad)
-                    if broad in es.UNSPLITTABLE_BROADS:
+                    if broad in self.hla_system.UNSPLITTABLE_BROADS:
                         splits[locus].add(broad)
                 if code in hla_system.codes_to_split:
                     locus, split = hla_system.codes_to_split[code]
                     if '?' in split:
                         pass
-                    elif split not in es.UNSPLITTABLE_SPLITS:
+                    elif split not in self.hla_system.UNSPLITTABLE_SPLITS:
                         splits[locus].add(split)
                 if (
                     hla_system.return_alleles and
@@ -156,11 +162,46 @@ class HLAProfile:
                     locus, split = hla_system.codes_to_allele[code]
                     alleles[locus].add(code)
 
+        splits = self.filter_split_typings(splits)
+
         broads = freeze_set_values(broads)
         splits = freeze_set_values(splits)
         alleles = freeze_set_values(alleles)
 
         return broads, splits, alleles
+
+    def filter_split_typings(
+        self,
+        hla_typings: Dict[str, Set[str]]
+    ) -> Dict[str, Set[str]]:
+        """
+        Filters HLA typings to the lowest known level,
+        removing broad antigens if their splits are present.
+
+        :param hla_typings: Dictionary of HLA typings per locus
+        :param broads_to_splits: Dictionary mapping loci to broad antigens
+                                 to their split levels
+        :return: Filtered HLA typings
+        """
+        filtered_hla_typings = {}
+
+        for locus, antigens in hla_typings.items():
+            filtered_antigens = set(antigens)
+
+            for antigen in antigens:
+                # Remove the antigen itself from the mapping
+                splits = (
+                    self.hla_system.broads_to_splits[locus][antigen] -
+                    {antigen}
+                )
+
+                # If any split is present, remove the broad antigen
+                if any(split in antigens for split in splits):
+                    filtered_antigens.discard(antigen)
+
+            filtered_hla_typings[locus] = filtered_antigens
+
+        return filtered_hla_typings
 
     def remove_ambiguous_splits(
         self, antigen_sets: List[Tuple[Optional[str]]]
@@ -239,7 +280,7 @@ class HLAProfile:
                                     antigen_sets[locus].append(
                                         (broad, split, allele)
                                     )
-                                elif corr_split in es.UNSPLITTABLE_SPLITS:
+                                elif corr_split in self.hla_system.UNSPLITTABLE_SPLITS:
                                     if hla_system.codes_to_broad[
                                         corr_split
                                     ][1] == broad:
@@ -300,7 +341,7 @@ class HLAProfile:
                         raise Exception(
                             f'The following antigens were not recognized: '
                             f'{missing_antigens}. Structured antigens: '
-                            f'{antigen_sets}')
+                            f'{antigen_sets}. For string: {self.hla_string}')
 
         # Check whether at most 2 typings are known per locus
         for locus, ant_set in antigen_sets.items():
@@ -392,15 +433,9 @@ class HLAProfile:
         if self._fully_homozygous is not None:
             return self._fully_homozygous
         else:
-            for nb in self.hla_system.needed_broad_mismatches:
-                if self.broads_homozygous[nb] != 1:
-                    self._fully_homozygous = False
-                    break
-            else:
-                if self.splits_homozygous[nb] != 1:
-                    self._fully_homozygous = False
-                else:
-                    self._fully_homozygous = True
+            self._fully_homozygous = all(
+                lc == 1 for lc in self.homozygosity_per_locus.values()
+            )
         return self._fully_homozygous
 
     @property
@@ -524,6 +559,19 @@ class HLASystem:
             sim_set.PATH_MATCH_TABLE
         )
 
+        # Unsplittables
+        if 'UNSPLITTABLES' not in sim_set.keys():
+            input('No unsplittables. Are you sure?')
+        self.UNSPLITTABLES = {
+            u: set(v)
+            for u, v in
+            sim_set.get('UNSPLITTABLES', {}).items()
+        }
+        self.UNSPLITTABLE_BROADS = set(self.UNSPLITTABLES.keys())
+        if self.UNSPLITTABLES:
+            self.UNSPLITTABLE_SPLITS = reduce(or_, self.UNSPLITTABLES.values())
+        else:
+            self.UNSPLITTABLE_SPLITS = {}
         hla_match_table.loc[:, 'orig_allele'] = copy(hla_match_table.allele)
 
         if self.sim_set.RETURN_ALLELES:
@@ -623,7 +671,7 @@ class HLASystem:
                     )
 
         # Add unsplittable broads to splits_to_alleles dictionary.
-        for broad, splits in es.UNSPLITTABLES.items():
+        for broad, splits in self.UNSPLITTABLES.items():
             locus, broad = code_to_matchinfo[cn.BROAD][broad]
             for split in splits:
                 if split in self.splits_to_alleles[locus]:
@@ -633,7 +681,7 @@ class HLASystem:
                         self.splits_to_alleles[locus][split]
                     )
         # Replace unsplittables from broads_to_splits dictionary
-        for broad, splits in es.UNSPLITTABLES.items():
+        for broad, splits in self.UNSPLITTABLES.items():
             locus, broad = code_to_matchinfo[cn.BROAD][broad]
             self.broads_to_splits[locus][
                 broad
@@ -646,13 +694,13 @@ class HLASystem:
         self.unsplittable_broads = {
             locus: (
                 {hla for hla in in_dict.keys() if len(in_dict[hla]) == 1}
-                .union(es.UNSPLITTABLE_BROADS)
+                .union(self.UNSPLITTABLE_BROADS)
             ) for locus, in_dict in self.broads_to_splits.items()
         }
         self.splittable_broads = {
             locus: (
                 {hla for hla in in_dict.keys() if len(in_dict[hla]) > 1}
-                .difference(es.UNSPLITTABLE_BROADS)
+                .difference(self.UNSPLITTABLE_BROADS)
             ) for locus, in_dict in self.broads_to_splits.items()
         }
 
@@ -695,11 +743,26 @@ class HLASystem:
         )
         self._donor_pool_hlas = None
 
+    def lookup_alleles(self, input_generator, codes_to_broad, codes_to_split):
+        for allele in input_generator:
+            if (allele in codes_to_broad) & (allele in codes_to_split):
+                yield (codes_to_broad[allele][1], codes_to_split[allele][1])
+            elif (allele in codes_to_broad):
+                yield (codes_to_broad[allele][1]), None
+            elif (allele not in codes_to_broad) and (allele not in codes_to_split):
+                continue
+            else:
+                print('Not known!')
+                breakpoint()
+
     def return_all_antigens(
-        self, input_string: str
-    ) -> Generator[str, None, None]:
+        self, input_string: str, expand=False
+    ) -> List[str]:
         """
-            Returns all antigens as a generator
+            Returns all antigens as a generator.
+            if Expand is set to True, any allele
+            will be expanded to the complete typing
+            on broads and splits.
         """
         input_string_upp = input_string.upper()
         for code in input_string_upp.split():
@@ -708,10 +771,29 @@ class HLASystem:
                     f'{code} is not a valid code '
                     f'(from: {input_string})'
                 )
-        return (
+
+        all_codes = [
             code for code in input_string_upp.split(' ')
             if code in self.all_match_codes
-        )
+        ]
+        if not expand:
+            return all_codes
+
+        # Extract the second element from tuples and skip None values
+        broad_and_split = [
+            item for tup in self.lookup_alleles(
+                all_codes,
+                codes_to_broad=self.codes_to_broad,
+                codes_to_split=self.codes_to_split
+            )
+            for item in tup
+            if item is not None
+        ]
+
+        # Extend all_codes in bulk
+        all_codes.extend(broad_and_split)
+        return all_codes
+
 
     def _count_broad_mismatches(
         self,
@@ -834,7 +916,7 @@ class HLASystem:
                 rdr.fix_hla_string(df_don_pool_hlas.loc[:, cn.DONOR_HLA])
             )
             self._donor_pool_hlas = list(
-                frozenset(self.return_all_antigens(s))
+                frozenset(self.return_all_antigens(s, expand=True))
                 for s in df_don_pool_hlas.donor_hla
             )
             return self._donor_pool_hlas
@@ -868,6 +950,7 @@ class Unacceptables:
         self.hla_system = hla_system
 
     def add_unacceptables(self, new_unacceptables: FrozenSet[str]) -> None:
+        """Add unacceptables to a pre-existing set of unacceptables."""
         self._unacceptables = self.unacceptables | new_unacceptables
         if self.unacc_string:
             self.unacc_string = (
@@ -876,18 +959,66 @@ class Unacceptables:
         else:
             self.unacc_string = ' '.join(new_unacceptables)
 
+    def add_missing_broad(self, broad, hla_string) -> str:
+
+        # Split the original string into parts
+        prefix = ''.join([char for char in broad if not char.isdigit()])
+        parts = hla_string.split()
+
+
+        # Identify the position of the first part that matches the prefix
+        insert_index = None
+        for i, part in enumerate(parts):
+            if part.startswith(prefix):
+                insert_index = i
+                break
+
+        # If 'broad' is in the list, remove it from its current position
+        if broad in parts:
+            parts.remove(broad)
+
+        # Insert 'broad' before the first part that matches the prefix
+        if insert_index is not None:
+            parts.insert(insert_index, broad)
+        else:
+            # If no part with the prefix exists, append 'broad' at the end
+            parts.append(broad)
+
+        # Join the parts back into a string
+        result = ' '.join(parts)
+
+        return result
+
+    def add_missing_broads(self) -> None:
+        """Function which adds missing broads to a set of unacceptable antigens,
+           if complete splits are present"""
+        present_broads = set(
+            self.hla_system.codes_to_broad[antigen]
+            for antigen in self._unacceptables
+            if antigen in self.hla_system.codes_to_broad
+        )
+        for locus, broad in present_broads:
+            if (len(corresponding_splits := self.hla_system.broads_to_splits[locus][broad]) > 1):
+                if len(corresponding_splits & self._unacceptables) == len(corresponding_splits):
+                    self._unacceptables |= {broad}
+                    self.unacc_string = self.add_missing_broad(broad, self.unacc_string)
+        self._unacceptables = frozenset(self._unacceptables)
+
+
     @property
     def unacceptables(self) -> FrozenSet[str]:
-        # property which returns a set of unacceptables,
-        # constructed from the unacceptable string
+        """property which returns a set of unacceptables,
+           constructed from the unacceptable string"""
         if type(self._unacceptables) is frozenset:
             return self._unacceptables
         if type(self.unacc_string) is str:
-            self._unacceptables = frozenset(
+            self._unacceptables = set(
                 self.hla_system.return_all_antigens(
                     self.unacc_string
                 )
             )
+            self.add_missing_broads()
+
         else:
             self._unacceptables = frozenset()
         return self._unacceptables

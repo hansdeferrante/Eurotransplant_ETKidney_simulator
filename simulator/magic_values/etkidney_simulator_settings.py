@@ -751,13 +751,6 @@ MTCH_RCRD_PAT_COLS = (
 
 HLA_FORBIDDEN_CHARACTERS = ('\\*', ':', '-')
 
-
-UNSPLITTABLES = {
-    mr.DR3: {mr.DR17, mr.DR18}
-}
-UNSPLITTABLE_BROADS = set(UNSPLITTABLES.keys())
-UNSPLITTABLE_SPLITS = reduce(or_, UNSPLITTABLES.values())
-
 MATCH_TO_BROADS = {
     v: f'mmb_{v}' for v in mr.ALL_HLA_LOCI
 }

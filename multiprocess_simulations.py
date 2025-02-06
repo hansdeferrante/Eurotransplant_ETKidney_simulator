@@ -18,8 +18,12 @@ from random import shuffle
 import warnings
 import pandas as pd
 import argparse
+import logging
 warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
 
+# Configure logging
+logging.basicConfig(filename='simulation_errors.log', level=logging.ERROR,
+                    format='%(asctime)s %(levelname)s:%(message)s')
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -58,35 +62,39 @@ def list_full_paths(directories: Tuple[str, List[str]]) -> Optional[List[str]]:
         return None
 
 
-def simulate_allocation(sim_path, skip_if_exists: bool = True):
+def simulate_allocation(sim_path, skip_if_exists: bool = False):
 
     from simulator.code.SimulationRunner import SimulationRunner
     from simulator.code.utils.read_input_files import read_sim_settings
 
-    sim_set = read_sim_settings(
-        sim_path
-    )
-
-    patient_file = Path(
-        f'{sim_set.RESULTS_FOLDER}/{sim_set.PATH_FINAL_PATIENT_STATUS}'
-    )
-    transplant_file = Path(
-        f'{sim_set.RESULTS_FOLDER}/{sim_set.PATH_TRANSPLANTATIONS}'
-    )
-    if patient_file.is_file() and transplant_file.is_file() and skip_if_exists:
-        print(f'{sim_path} already processed... Continuing with next one')
-        return 0
-    elif not Path(sim_set.PATH_STATUS_UPDATES).is_file():
-        print(
-            f"Status update file '{sim_set.PATH_STATUS_UPDATES} "
-            f"does not exist. Skipping...")
-        return 0
-    else:
-        print(f'Working on {sim_path}')
-
     # Read in simulation settings
     with lock_init:
+
         try:
+
+            sim_set = read_sim_settings(
+                sim_path
+            )
+
+            patient_file = Path(
+                f'{sim_set.RESULTS_FOLDER}/{sim_set.PATH_FINAL_PATIENT_STATUS}'
+            )
+            transplant_file = Path(
+                f'{sim_set.RESULTS_FOLDER}/{sim_set.PATH_TRANSPLANTATIONS}'
+            )
+            if patient_file.is_file() and transplant_file.is_file() and skip_if_exists:
+                print(f'{sim_path} already processed... Continuing with next one')
+                return 0
+            elif not Path(sim_set.PATH_STATUS_UPDATES).is_file():
+                print(
+                    f"Status update file '{sim_set.PATH_STATUS_UPDATES} "
+                    f"does not exist. Skipping...")
+                return 0
+            else:
+                print(f'Working on {sim_path}')
+
+            # Initialize simulation
+            print(f"Lock acquired for {sim_path}")
             simulator = SimulationRunner(
                 sim_set=sim_set,
                 verbose=False
@@ -94,12 +102,13 @@ def simulate_allocation(sim_path, skip_if_exists: bool = True):
 
         except Exception as e:
             print('\n\n***********')
-            msg = f'An error occurred when loading {sim_path}'
+            msg = f'An error occurred when initializing for {sim_path}: {e}'
             print(msg)
-            print(e)
+            logging.exception(msg)
             print('\n\n***********')
             return 0
 
+    print(f"Lock released for {sim_path}")
     try:
         simulator.simulate_allocation(
             verbose=False,
@@ -107,17 +116,27 @@ def simulate_allocation(sim_path, skip_if_exists: bool = True):
         )
     except Exception as e:
         print('\n\n***********')
-        msg = f'An error occurred for {sim_path}'
+        msg = f'An error occurred when simulating for {sim_path}: {e}'
         print(msg)
-        print(e)
+        logging.exception(msg)
         print('\n\n***********')
         return 0
 
     with lock_gzip:
-        simulator.sim_results.save_outcomes_to_file(
-            patients=simulator.patients,
-            cens_date=sim_set.SIM_END_DATE
-        )
+        try:
+
+            simulator.sim_results.save_outcomes_to_file(
+                patients=simulator.patients,
+                cens_date=sim_set.SIM_END_DATE
+            )
+            return 1
+        except:
+            print('\n\n***********')
+            msg = f'An error occurred when saving outcomes for {sim_path}: {e}'
+            print(msg)
+            logging.exception(msg)
+            print('\n\n***********')
+            return 0
 
     return 1
 
@@ -145,7 +164,7 @@ if __name__ == '__main__':
     paths = list_full_paths(
         [
             os.path.join(es.DIR_SIM_SETTINGS, path)
-            for path in ['2025-01-16']
+            for path in ['2025-02-06']
         ]
     )
     shuffle(paths)

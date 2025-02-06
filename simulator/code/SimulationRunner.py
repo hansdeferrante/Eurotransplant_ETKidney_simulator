@@ -680,6 +680,7 @@ class SimulationRunner:
                         travel_time_dict=self.dict_travel_times,
                         distance_cache=self.match_distance_cache
                     )
+
                     match_list_esp = None
 
                     # Now determine which patient accepts the organ
