@@ -15,8 +15,8 @@ import simulator.magic_values.etkidney_simulator_settings as es
 import simulator.code.utils.read_input_files as rdr
 from simulator.code.matchlist.MatchListETKASandESP import \
     MatchListCurrentETKAS
-from simulator.code.HLA.HLASystem import HLASystem, Unacceptables
-from simulator.code.HLA.MMPSystem import MMPSystem
+from simulator.code.HLA.api import HLAStatsAPI
+from simulator.code.HLA.unacceptables import Unacceptables
 
 from simulator.code.utils.read_input_files import \
     read_sim_settings
@@ -72,12 +72,11 @@ class TestKidneyMatchListRanks(unittest.TestCase):
                 cn.DONOR_REGION, cn.DONOR_COUNTRY, cn.GRAFT_BLOODGROUP
             ]
         ]
-        hla_system = HLASystem(ss)
-        mmp_system = MMPSystem(ss, hla_system)
+        hla_stats_api = HLAStatsAPI(sim_set=ss)
         k = 0
 
         def set_unacceptables(pat: Patient, unacc: str):
-            pat.unacceptable_antigens = Unacceptables(hla_system, unacc)
+            pat.unacceptable_antigens = Unacceptables(ontology=hla_stats_api.ontology, unacc_string=unacc)
             return pat
 
         for _, df_sel in groupby(
@@ -108,8 +107,7 @@ class TestKidneyMatchListRanks(unittest.TestCase):
                         listing_date=CURRENT_DATE,
                         urgency_code='T',
                         sim_set=ss,
-                        hla_system=hla_system,
-                        mmp_system=mmp_system,
+                        hla_stats_api=hla_stats_api,
                         date_first_dial=(
                             CURRENT_DATE - timedelta(
                                 days=(rcrd['wfmr_xc_wait'] / 33.33 * 365)
@@ -132,7 +130,7 @@ class TestKidneyMatchListRanks(unittest.TestCase):
                     donor_dcd=False,
                     weight=80,
                     hla=rcrd[cn.D_HLA_FULL],
-                    hla_system=hla_system,
+                    hla_stats_api=hla_stats_api,
                     age=40,
                     death_cause_group='CVA',
                     malignancy=False,
@@ -163,7 +161,7 @@ class TestKidneyMatchListRanks(unittest.TestCase):
                 patients=patient_list,
                 donor=donors[0],
                 match_date=CURRENT_DATE,
-                hla_system=hla_system,
+                hla_stats_api=hla_stats_api,
                 bal_system=bal_system,
                 calc_points=ss.calc_etkas_score,
                 sim_start_date=ss.SIM_START_DATE,

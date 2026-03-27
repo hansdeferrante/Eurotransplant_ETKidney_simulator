@@ -8,7 +8,7 @@ sys.path.append('./')
 
 from simulator.code.AcceptanceModule import AcceptanceModule
 from simulator.code.entities import Donor
-from simulator.code.HLA.HLASystem import HLASystem
+from simulator.code.HLA.api import HLAStatsAPI
 import simulator.magic_values.column_names as cn
 import simulator.magic_values.etkidney_simulator_settings as es
 from simulator.code.utils.read_input_files import \
@@ -35,7 +35,7 @@ class TestCurrentAllocation(unittest.TestCase):
                 'sim_settings_test.yaml'
             )
         )
-        hla_system = HLASystem(sim_set=ss)
+        hla_stats_api = HLAStatsAPI(sim_set=ss)
         travel_time_dict = read_travel_times()
 
         d_test_donors = pd.read_csv('data/test/triggered_rescue.csv')
@@ -73,7 +73,7 @@ class TestCurrentAllocation(unittest.TestCase):
                 drug_abuse=rcrd[cn.D_DRUG_ABUSE],
                 n_kidneys_available=2,
                 hla=dummy_hla,
-                hla_system=hla_system,
+                hla_stats_api=hla_stats_api,
                 diabetes=rcrd[cn.D_DIABETES],
                 cardiac_arrest=rcrd[cn.D_CARREST],
                 last_creat=rcrd[cn.D_LAST_CREAT],

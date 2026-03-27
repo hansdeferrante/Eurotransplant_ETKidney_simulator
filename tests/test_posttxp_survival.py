@@ -8,8 +8,7 @@ sys.path.append('./')
 
 from simulator.code.PostTransplantPredictor import PostTransplantPredictor
 from simulator.code.entities import Patient, Donor
-from simulator.code.HLA.HLASystem import HLASystem
-from simulator.code.HLA.MMPSystem import MMPSystem
+from simulator.code.HLA.api import HLAStatsAPI
 import simulator.magic_values.inputfile_settings as ifs
 import simulator.magic_values.column_names as cn
 import simulator.magic_values.etkidney_simulator_settings as es
@@ -57,8 +56,7 @@ class TestCurrentAllocation(unittest.TestCase):
         d_txps.current_patient_hla = fix_hla_string(
             d_txps.current_patient_hla
         )
-        hla_system = HLASystem(ss)
-        mmp_system = MMPSystem(ss, hla_system)
+        hla_stats_api = HLAStatsAPI(sim_set=ss)
         bal_system = load_balances(ss, update_balances=False)
         ptp = PostTransplantPredictor(
             offset_ids_transplants=99999,
@@ -89,8 +87,7 @@ class TestCurrentAllocation(unittest.TestCase):
                     else cn.NO_RETRANSPLANT
                 ),
                 hla=rcrd[cn.CURRENT_PATIENT_HLA],
-                hla_system=hla_system,
-                mmp_system=mmp_system
+                hla_stats_api=hla_stats_api,
             )
 
             don = Donor(
@@ -111,7 +108,7 @@ class TestCurrentAllocation(unittest.TestCase):
                 drug_abuse=rcrd[cn.D_DRUG_ABUSE],
                 n_kidneys_available=2,
                 hla=rcrd[cn.DONOR_HLA],
-                hla_system=hla_system,
+                hla_stats_api=hla_stats_api,
                 diabetes=rcrd[cn.D_DIABETES],
                 cardiac_arrest=(
                     1 if rcrd[cn.D_CARREST] == 'Yes' else 0
@@ -136,7 +133,7 @@ class TestCurrentAllocation(unittest.TestCase):
                 patients=[pat],
                 donor=don,
                 match_date=rcrd['date_transplanted'].to_pydatetime(),
-                hla_system=hla_system,
+                hla_stats_api=hla_stats_api,
                 bal_system=bal_system,
                 calc_points=ss.calc_etkas_score,
                 sim_start_date=ss.SIM_START_DATE
@@ -213,8 +210,7 @@ class TestCurrentAllocation(unittest.TestCase):
         d_txps.current_patient_hla = fix_hla_string(
             d_txps.current_patient_hla
         )
-        hla_system = HLASystem(ss)
-        mmp_system = MMPSystem(ss, hla_system)
+        hla_stats_api = HLAStatsAPI(sim_set=ss)
         bal_system = load_balances(ss, update_balances=False)
         ptp = PostTransplantPredictor(
             offset_ids_transplants=99999,
@@ -245,8 +241,7 @@ class TestCurrentAllocation(unittest.TestCase):
                     else cn.NO_RETRANSPLANT
                 ),
                 hla=rcrd[cn.CURRENT_PATIENT_HLA],
-                hla_system=hla_system,
-                mmp_system=mmp_system
+                hla_stats_api=hla_stats_api,
             )
 
             don = Donor(
@@ -267,7 +262,7 @@ class TestCurrentAllocation(unittest.TestCase):
                 drug_abuse=rcrd[cn.D_DRUG_ABUSE],
                 n_kidneys_available=2,
                 hla=rcrd[cn.DONOR_HLA],
-                hla_system=hla_system,
+                hla_stats_api=hla_stats_api,
                 diabetes=rcrd[cn.D_DIABETES],
                 cardiac_arrest=(
                     1 if rcrd[cn.D_CARREST] == 'Yes' else 0
@@ -292,7 +287,7 @@ class TestCurrentAllocation(unittest.TestCase):
                 patients=[pat],
                 donor=don,
                 match_date=rcrd['date_transplanted'].to_pydatetime(),
-                hla_system=hla_system,
+                hla_stats_api=hla_stats_api,
                 bal_system=bal_system,
                 calc_points=ss.calc_etkas_score,
                 sim_start_date=ss.SIM_START_DATE

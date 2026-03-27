@@ -141,26 +141,31 @@ class SimResults:
             else 0
         )
 
-        if self.broad_loci_to_save and pat.hla_system:
+        if self.broad_loci_to_save and pat.hla_stats_api:
+            broad_mm = pat.hla_stats_api.count_broad_mismatches_dict(
+                donor_hla=matchr.donor.hla,
+                patient_hla=pat.hla,
+                loci=set(self.broad_loci_to_save),
+                locus_prefix=''
+            )
             result_dict.update(
                 {
                     'mmb_' + k: v
-                    for k, v in pat.hla_system._count_broad_mismatches(
-                        d_hla=matchr.donor.hla,
-                        p_hla=pat.hla,
-                        loci=set(self.broad_loci_to_save)
-                    ).items()
+                    for k, v in broad_mm.items()
                 }
             )
-        if self.split_loci_to_save and pat.hla_system:
+        if self.split_loci_to_save and pat.hla_stats_api:
+            split_mm = pat.hla_stats_api.count_split_mismatches_dict(
+                donor_hla=matchr.donor.hla,
+                patient_hla=pat.hla,
+                ignore_ambiguities=True,
+                loci=set(self.split_loci_to_save),
+                locus_prefix=''
+            )
             result_dict.update(
                 {
                     'mms_' + k: v
-                    for k, v in pat.hla_system._count_split_mismatches(
-                        d_hla=matchr.donor.hla,
-                        p_hla=pat.hla,
-                        loci=set(self.split_loci_to_save)
-                    ).items()
+                    for k, v in split_mm.items()
                 }
             )
 

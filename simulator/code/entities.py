@@ -27,7 +27,10 @@ import simulator.magic_values.magic_values_rules as mgr
 from simulator.code.events.StatusUpdate import StatusUpdate, ProfileUpdate
 from simulator.code.events.PatientStatusQueue import PatientStatusQueue
 from simulator.code.utils.SimResults import SimResults
-from simulator.code.HLA.HLASystem import HLAProfile, Unacceptables
+from simulator.code.HLA.api import HLAStatsAPI
+from simulator.code.HLA.minimal_mismatch_criteria import HLAMismatchCriteria
+from simulator.code.HLA.typing import HLATyping
+from simulator.code.HLA.unacceptables import Unacceptables
 
 from simulator.magic_values.inputfile_settings import DEFAULT_DATE_TIME_HMS
 
@@ -74,8 +77,8 @@ class Donor:
         Grouping of causes of death.
     hla_string : str
         Human leukocyte antigen string.
-    hla : Optional['HLAProfile']
-        HLA profile object, if available.
+    hla : Optional['HLATyping']
+        HLA typing object, if available.
     n_kidneys_available : int
         Number of kidneys available from the donor.
     hypertension : bool
@@ -138,7 +141,7 @@ class Donor:
         malignancy: bool, drug_abuse: bool,
         euthanasia: bool,
         rescue: bool, death_cause_group: str,
-        hla_system: 'entities.HLASystem' = None,
+        hla_stats_api: Optional['HLAStatsAPI'] = None,
         donor_marginal_free_text: Optional[int] = 0,
         tumor_history: Optional[int] = 0,
         height: Optional[float] = None,
@@ -254,9 +257,11 @@ class Donor:
         self._offer_inherit_cols = None
 
         self.hla_string = hla
-        if hla_system:
-            self.hla = HLAProfile(hla, hla_system)
-            self.all_antigens = frozenset(hla_system.return_all_antigens(hla))
+        if hla_stats_api:
+            self.hla = HLATyping(hla, ontology=hla_stats_api.ontology)
+            self.all_antigens = frozenset(
+                hla_stats_api.return_all_antigens(hla)
+            )
 
     def arrival_at(self, sim_date: datetime) -> float:
         """Retrieve calendar time arrival time."""
@@ -301,7 +306,7 @@ class Donor:
             'weight': 50,
             'donor_dcd': False,
             'hla': None,
-            'hla_system': None,
+            'hla_stats_api': None,
             'hypertension': False,
             'diabetes': False,
             'cardiac_arrest': False,
@@ -350,7 +355,7 @@ class Donor:
         result = cls.__new__(cls)
         memo[id(self)] = result
 
-        # Copy all attributes, except for hla_system and bal_system
+        # Copy all attributes, except for hla_stats_api and bal_system
         for k, v in self.__dict__.items():
             if k in {'hla', 'all_antigens', 'sim_set'}:
                 setattr(result, k, v)  # Shallow copy of HLA
@@ -381,8 +386,8 @@ class Patient:
         recipient blood group
     hla_string: str
         string of the HLA
-    hla: HLAProfile
-        instance of class HLAProfile
+    hla: HLATyping
+        instance of class HLATyping
     listing_date: datetime
         Time of entry on the kidney waitlist
     urgency_code: str
@@ -439,8 +444,7 @@ class Patient:
         id_reg: Optional[int] = None,
         date_first_dial: Optional[datetime] = None,
         seed: Optional[int] = None,
-        hla_system: Optional['entities.HLASystem'] = None,
-        mmp_system: Optional['entities.MMPSystem'] = None,
+        hla_stats_api: Optional['HLAStatsAPI'] = None,
         previous_wt: Optional[float] = None,
         kidney_program: Optional[str] = None
     ) -> None:
@@ -556,8 +560,7 @@ class Patient:
             f'{", ".join(es.ET_COUNTRIES)}, not {recipient_country}'
 
         # Initialize HLA information
-        self.hla_system = hla_system
-        self.mmp_system = mmp_system
+        self.hla_stats_api = hla_stats_api
         for fb in es.HLA_FORBIDDEN_CHARACTERS:
             if type(hla) is str and fb in hla:
                 warnings.warn(
@@ -575,7 +578,10 @@ class Patient:
         self.set_chosen_program(kidney_program)
 
         # Initialize empty unacceptables
-        self.unacceptable_antigens = Unacceptables(hla_system)
+        self.unacceptable_antigens = (
+            Unacceptables(ontology=self.hla_stats_api.ontology)
+            if self.hla_stats_api is not None else None
+        )
 
         # Items we want to store, for rapid access through functions
         # and properties
@@ -666,11 +672,13 @@ class Patient:
 
     def set_match_hlas(self, hla_string: str) -> None:
         self.hla_string = hla_string
-        if self.hla_system:
-            self.hla = HLAProfile(hla_string, hla_system=self.hla_system)
-            self.__dict__.update(
-                self.hla.homozygosity_per_locus
+        if self.hla_stats_api:
+            self.hla = HLATyping(
+                hla_string,
+                ontology=self.hla_stats_api.ontology
             )
+            prepared = self.hla_stats_api.matcher.prepare_typing_view(self.hla)
+            self.__dict__.update(prepared.homozygosity_per_locus)
 
     def set_urgency_code(
         self, code: str, reason: Optional[str] = None
@@ -766,9 +774,9 @@ class Patient:
         """
         if self._et_mmp:
             return self._et_mmp
-        elif self.hla_system and self.mmp_system:
+        elif self.hla_stats_api:
             et_don_mmprobs, et_hla_mmfreqs = (
-                self.mmp_system.calculate_broad_split_mmps(
+                self.hla_stats_api.calculate_broad_split_mmps(
                     p=self
                 )
             )
@@ -784,7 +792,7 @@ class Patient:
         else:
             raise Exception(
                 'Cannot calculate ET-MMP, '
-                'without HLA / MMP system.')
+                'without HLA stats API.')
 
     def get_hla_mismatchfreqs(self) -> Dict[str, float]:
         """Get the HLA mismatch frequency, i.e. the probability
@@ -796,14 +804,14 @@ class Patient:
         """
         if self.__dict__.get(cn.HLA_MISMATCHFREQ):
             return self.__dict__[cn.HLA_MISMATCHFREQ]
-        elif self.hla_system and self.mmp_system:
-            if self.hla_string not in self.mmp_system.match_potentials:
+        elif self.hla_stats_api:
+            if self.hla_string not in self.hla_stats_api.match_potentials:
                 print(
                     f'Warning: re-calculating match potential '
                     f'for:\n\t{self.hla_string}\n of patient '
                     f'{self.id_recipient}.\n These were not initialized.\n'
                 )
-                hmps = self.mmp_system.calculate_hla_match_probability(
+                hmps = self.hla_stats_api.calculate_hla_match_probability(
                     self.hla,
                     hla_match_pot_definitions=(
                         es.HLA_FAVORABLE_MATCH_DEFINITIONS
@@ -816,14 +824,14 @@ class Patient:
                     ): round(100 * (1 - v)**1000, 5)
                     for k, v in hmps.items()
                 }
-                self.mmp_system.match_potentials[self.hla_string] = {
+                self.hla_stats_api.match_potentials[self.hla_string] = {
                     **hmps,
                     **hla_matchfreqs
                 }
-            if self.mmp_system.match_potentials[self.hla_string]:
+            if self.hla_stats_api.match_potentials[self.hla_string]:
 
                 self.__dict__[cn.HLA_MISMATCHFREQ] = (
-                    self.mmp_system.match_potentials[self.hla_string]
+                    self.hla_stats_api.match_potentials[self.hla_string]
                 )
                 return self.__dict__[cn.HLA_MISMATCHFREQ]
             else:
@@ -832,7 +840,7 @@ class Patient:
                 )
         else:
             raise Exception(
-                'Cannot calculate mismatch frequency, without an MMP system.'
+                'Cannot calculate mismatch frequency, without HLA stats API.'
             )
 
     def update_etkas_esp_eligibility(self, s: float) -> None:
@@ -1107,12 +1115,14 @@ class Patient:
     def _update_unacceptables(self, upd: StatusUpdate) -> None:
         if type(upd.status_value) is str:
             self.unacceptable_antigens = Unacceptables(
-                self.hla_system,
+                ontology=self.hla_stats_api.ontology,
                 unacc_string=upd.status_value
             )
             self._vpra = float(upd.status_detail)
         else:
-            self.unacceptable_antigens = Unacceptables(self.hla_system)
+            self.unacceptable_antigens = Unacceptables(
+                ontology=self.hla_stats_api.ontology
+            )
             self._vpra = None
         self._et_mmp = None
 
@@ -1153,7 +1163,7 @@ class Patient:
     @property
     def vpra(self) -> float:
         if self._vpra is None:
-            self._vpra = self.hla_system.calculate_vpra_from_string(
+            self._vpra = self.hla_stats_api.calculate_vpra_from_string(
                 self.unacceptable_antigens.unacc_string
             )
         return self._vpra
@@ -1209,12 +1219,12 @@ class Patient:
         result = cls.__new__(cls)
         memo[id(self)] = result
 
-        # Copy all attributes, except for hla_system and bal_system
+        # Copy all attributes, except for hla_stats_api and bal_system
         for k, v in self.__dict__.items():
             if k in {
-                'hla_system', 'bal_system',
+                'hla_stats_api', 'bal_system',
                 'center_travel_times', 'calc_points',
-                'mmp_system', 'distance_cache',
+                'distance_cache',
                 'hla', 'unacceptable_antigens',
                 'sim_set'
             }:
@@ -1280,8 +1290,8 @@ class Profile:
         Euthanasia status.
     dcd : bool
         Donor after circulatory death status.
-    match_qualities : Dict[Tuple[int, int, int], bool]
-        Dictionary representing match qualities.
+    match_qualities : HLAMismatchCriteria
+        HLA mismatch acceptability criteria.
     esp : bool
         ESP status.
     extended_esp : bool
@@ -1308,7 +1318,7 @@ class Profile:
         sepsis: bool, meningitis: bool,
         malignancy: bool, drug_abuse: bool,
         rescue: bool, euthanasia: bool, dcd: bool,
-        match_qualities: Dict[Tuple[int, int, int], bool],
+        match_qualities: HLAMismatchCriteria,
         esp: bool, extended_esp: bool
     ) -> None:
 
@@ -1324,6 +1334,10 @@ class Profile:
         self.rescue = rescue
         self.euthanasia = euthanasia
         self.dcd = dcd
+        if not isinstance(match_qualities, HLAMismatchCriteria):
+            raise TypeError(
+                "match_qualities must be HLAMismatchCriteria."
+            )
         self.match_qualities = match_qualities
         self.esp = esp
         self.extended_esp = extended_esp
@@ -1393,7 +1407,7 @@ class Profile:
     def _check_hla_acceptable(
         self, mq: Optional[Tuple[int, int, int]] = None, verbose=False
     ) -> bool:
-        if mq is not None and self.match_qualities[mq] == 0:
+        if mq is not None and not self.match_qualities.accepts_tuple(mq):
             if verbose:
                 print('HLA-incompatible')
             return False

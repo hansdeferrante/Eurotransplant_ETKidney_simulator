@@ -15,7 +15,7 @@ from simulator.code.entities import Patient, Donor
 import simulator.magic_values.column_names as cn
 import simulator.code.utils.read_input_files as rdr
 import simulator.magic_values.etkidney_simulator_settings as es
-from simulator.code.HLA.HLASystem import HLASystem
+from simulator.code.HLA.api import HLAStatsAPI
 import pandas as pd
 import os
 from collections import defaultdict
@@ -52,7 +52,7 @@ class TestESPMatchlist(unittest.TestCase):
         # Load HLA system and match lists
         ss.needed_broad_mismatches = ('hla_b', 'hla_a')
         ss.needed_split_mismatches = ('hla_dr',)
-        hla_system = HLASystem(ss)
+        hla_stats_api = HLAStatsAPI(sim_set=ss)
         bal_system = load_balances(ss)
 
         df = rdr._read_with_datetime_cols(
@@ -106,7 +106,7 @@ class TestESPMatchlist(unittest.TestCase):
                 ),
                 urgency_code='T',
                 sim_set=ss,
-                hla_system=hla_system,
+                hla_stats_api=hla_stats_api,
                 date_first_dial=rcrd['wl_date_first_dialysis'],
                 kidney_program=rcrd['wlki_programme']
             )
@@ -128,7 +128,7 @@ class TestESPMatchlist(unittest.TestCase):
                 donor_dcd=False,
                 weight=80,
                 hla=don_hla,
-                hla_system=hla_system,
+                hla_stats_api=hla_stats_api,
                 age=40,
                 death_cause_group='CVA',
                 malignancy=False,
@@ -170,7 +170,7 @@ class TestESPMatchlist(unittest.TestCase):
                     donor=d,
                     match_date=d.reporting_date.to_pydatetime(),
                     sim_start_date=d.sim_set.SIM_START_DATE,
-                    hla_system=hla_system,
+                    hla_stats_api=hla_stats_api,
                     bal_system=bal_system,
                     calc_points=ss.calc_esp_score,
                     store_score_components=(ss.STORE_SCORE_COMPONENTS)

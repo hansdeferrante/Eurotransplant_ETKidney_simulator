@@ -1,37 +1,45 @@
-# This file may be used to create an environment using:
-# $ conda create --name <env> --file <this file>
-# platform: win-64
-blas=1.0=mkl
-bottleneck=1.3.7=py312he558020_0
-bzip2=1.0.8=h2bbff1b_6
-ca-certificates=2024.7.2=haa95532_0
-expat=2.6.2=hd77b12b_0
-intel-openmp=2023.1.0=h59b6b97_46320
-libffi=3.4.4=hd77b12b_1
-mkl=2023.1.0=h6b88ed4_46358
-mkl-service=2.4.0=py312h2bbff1b_1
-mkl_fft=1.3.8=py312h2bbff1b_0
-mkl_random=1.2.4=py312h59b6b97_0
-numexpr=2.8.7=py312h96b7d27_0
-numpy=1.26.4=py312hfd52020_0
-numpy-base=1.26.4=py312h4dde369_0
-openssl=3.0.14=h827c3e9_0
-pandas=2.2.2=py312h0158946_0
-pip=24.0=py312haa95532_0
-python=3.12.4=h14ffc60_1
-python-dateutil=2.9.0post0=py312haa95532_2
-python-tzdata=2023.3=pyhd3eb1b0_0
-pytz=2024.1=py312haa95532_0
-pyyaml=6.0.1=py312h2bbff1b_0
-setuptools=69.5.1=py312haa95532_0
-six=1.16.0=pyhd3eb1b0_1
-sqlite=3.45.3=h2bbff1b_0
-tbb=2021.8.0=h59b6b97_0
-tk=8.6.14=h0416ee5_0
-tzdata=2024a=h04d1e81_0
-vc=14.2=h2eaa2aa_4
-vs2015_runtime=14.29.30133=h43f2093_4
-wheel=0.43.0=py312haa95532_0
-xz=5.4.6=h8cc25b3_1
-yaml=0.2.5=he774522_0
-zlib=1.2.13=h8cc25b3_1
+name: etkidney_simulator
+channels:
+  - defaults
+dependencies:
+  - blas=1.0
+  - bottleneck=1.3.7
+  - bzip2=1.0.8
+  - ca-certificates=2025.12.2
+  - et_xmlfile=2.0.0
+  - expat=2.7.3
+  - iniconfig=2.3.0
+  - libcxx=20.1.8
+  - libexpat=2.7.3
+  - libffi=3.4.4
+  - libgfortran5=15.2.0
+  - libopenblas=0.3.30
+  - libzlib=1.3.1
+  - llvm-openmp=20.1.8
+  - ncurses=6.5
+  - numexpr=2.8.7
+  - numpy=1.26.4
+  - numpy-base=1.26.4
+  - openpyxl=3.1.5
+  - openssl=3.5.5
+  - packaging=25.0
+  - pandas=2.2.2
+  - pip=25.3
+  - pluggy=1.5.0
+  - pygments=2.19.2
+  - pytest=9.0.2
+  - python=3.12.0
+  - python-dateutil=2.9.0post0
+  - python-tzdata=2025.3
+  - pytz=2025.2
+  - pyyaml=6.0.3
+  - readline=8.3
+  - setuptools=80.9.0
+  - six=1.17.0
+  - sqlite=3.51.1
+  - tk=8.6.15
+  - tzdata=2025c
+  - wheel=0.45.1
+  - xz=5.6.4
+  - yaml=0.2.5
+  - zlib=1.3.1

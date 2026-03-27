@@ -23,8 +23,8 @@ if __name__ == '__main__':
     sim_set = read_sim_settings(
         os.path.join(
             es.DIR_SIM_SETTINGS,
-            '2025-01-16',
-            'CurrentETKAS_vPRA_sliding_scale_b2_100p_1_1.yml'
+            '2026-03-26',
+            'CurrentETKAS_actual_1_1.yml'
         )
     )
     # Read in simulation settings

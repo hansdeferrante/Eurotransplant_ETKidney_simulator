@@ -16,7 +16,7 @@ sys.path.append('./')
 if True:  # noqa E402
     import simulator.code.utils.read_input_files as rdr
     import simulator.magic_values.etkidney_simulator_settings as es
-    from simulator.code.HLA.HLASystem import HLASystem
+    from simulator.code.HLA.api import HLAStatsAPI
 
 
 class TestCalculateVPRA(unittest.TestCase):
@@ -45,7 +45,7 @@ class TestCalculateVPRA(unittest.TestCase):
         # Load HLA system and match lists
         ss.needed_broad_mismatches = ('hla_b', 'hla_a')
         ss.needed_split_mismatches = ('hla_dr',)
-        hla_system = HLASystem(ss)
+        hla_stats_api = HLAStatsAPI(sim_set=ss)
         DUMMY_DATE = pd.Timestamp('2000-01-01')
 
         # Read in all transplantations
@@ -71,7 +71,7 @@ class TestCalculateVPRA(unittest.TestCase):
         calculated_vpras = (
             {
                 'unacc': unacc,
-                'calculated_vpra': hla_system.calculate_vpra_from_string(
+                'calculated_vpra': hla_stats_api.calculate_vpra_from_string(
                     pat_hla
                 ),
                 'database_vpra': pat_vpra

@@ -16,14 +16,14 @@ if True:  # noqa E402
     import simulator.magic_values.column_names as cn
     import simulator.code.utils.read_input_files as rdr
     import simulator.magic_values.etkidney_simulator_settings as es
-    from simulator.code.HLA.HLASystem import HLASystem, Unacceptables
+    from simulator.code.HLA.api import HLAStatsAPI
+    from simulator.code.HLA.unacceptables import Unacceptables
     import pandas as pd
     import os
     import simulator.magic_values.magic_values_rules as mr
     import random
     from statistics import mean
-    from simulator.code.HLA.MMPSystem import MMPSystem
-
+    
 
 class TestConstructMMP(unittest.TestCase):
     """Test whether match qualities are correctly constructed
@@ -53,8 +53,7 @@ class TestConstructMMP(unittest.TestCase):
         # Load HLA system and match lists
         ss.needed_broad_mismatches = ('hla_b', 'hla_a')
         ss.needed_split_mismatches = ('hla_dr',)
-        hla_system = HLASystem(ss)
-        mmp_system = MMPSystem(ss, hla_system=hla_system)
+        hla_stats_api = HLAStatsAPI(sim_set=ss)
         DUMMY_DATE = pd.Timestamp('2000-01-01')
 
         # Read in random offers
@@ -92,7 +91,7 @@ class TestConstructMMP(unittest.TestCase):
         rcrd = {}
 
         def set_unacceptables(pat: Patient, unacc: str):
-            pat.unacceptable_antigens = Unacceptables(hla_system, unacc)
+            pat.unacceptable_antigens = Unacceptables(ontology=hla_stats_api.ontology, unacc_string=unacc)
             return pat
         patients = [
             set_unacceptables(
@@ -107,8 +106,7 @@ class TestConstructMMP(unittest.TestCase):
                     listing_date=DUMMY_DATE,
                     urgency_code='T',
                     sim_set=ss,
-                    hla_system=hla_system,
-                    mmp_system=mmp_system
+                    hla_stats_api=hla_stats_api,
                 ),
                 pat_unacc
             )

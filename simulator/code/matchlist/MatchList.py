@@ -21,7 +21,7 @@ from simulator.code.matchlist.ScoringFunction import MatchPointFunction
 from simulator.code.entities import (
     Patient, Donor, Profile
 )
-from simulator.code.HLA.HLASystem import HLASystem
+from simulator.code.HLA.api import HLAStatsAPI
 from simulator.code.BalanceSystem import BalanceSystem
 
 
@@ -142,7 +142,7 @@ class MatchRecord:
         patient: Patient,
         sim_set: DotDict,
         common_info: Dict[Any, Any],
-        hla_system: HLASystem,
+        hla_stats_api: HLAStatsAPI,
         calc_points: MatchPointFunction,
         bal_system: BalanceSystem,
         distance_cache: Optional[MatchDistanceCache] = None
@@ -197,12 +197,12 @@ class MatchRecord:
         # HLA matches
         try:
             self.__dict__.update(
-                hlas := hla_system.count_mismatches(
+                hlas := hla_stats_api.count_mismatches(
                     d_hla=self.donor.hla,
                     p_hla=self.patient.hla
                 )
             )
-            for k in hla_system.loci_zero_mismatch:
+            for k in hla_stats_api.loci_zero_mismatch:
                 if hlas[k] != 0:
                     self.__dict__[cn.ZERO_MISMATCH] = False
                     break
@@ -459,12 +459,12 @@ class MatchRecord:
         result = cls.__new__(cls)
         memo[id(self)] = result
 
-        # Copy all attributes, except for hla_system and bal_system
+        # Copy all attributes, except for hla_stats_api and bal_system
         for k, v in self.__dict__.items():
             if k in {
-                'hla_system', 'bal_system',
+                'hla_stats_api', 'bal_system',
                 'center_travel_times', 'calc_points',
-                'mmp_system', 'distance_cache'
+                'distance_cache'
             }:
                 setattr(result, k, v)  # Shallow copy
             else:
@@ -569,7 +569,7 @@ class MatchList:
     def __init__(
             self, patients: Generator[Patient, None, None], donor: Donor,
             match_date: datetime,
-            hla_system: HLASystem,
+            hla_stats_api: HLAStatsAPI,
             bal_system: BalanceSystem,
             calc_points: MatchPointFunction,
             sim_start_date: Optional[datetime],
@@ -649,7 +649,7 @@ class MatchList:
                 patient=pat,
                 common_info=common_info,
                 calc_points=calc_points,
-                hla_system=hla_system,
+                hla_stats_api=hla_stats_api,
                 bal_system=bal_system,
                 distance_cache=distance_cache
             ) for pat in patients

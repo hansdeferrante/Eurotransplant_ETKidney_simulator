@@ -16,7 +16,7 @@ if True:  # noqa E402
     import simulator.magic_values.column_names as cn
     import simulator.code.utils.read_input_files as rdr
     import simulator.magic_values.etkidney_simulator_settings as es
-    from simulator.code.HLA.HLASystem import HLASystem
+    from simulator.code.HLA.api import HLAStatsAPI
     import pandas as pd
     import os
     import simulator.magic_values.magic_values_rules as mr
@@ -53,7 +53,7 @@ class TestConstructMatchQuality(unittest.TestCase):
         # Load HLA system and match lists
         ss.needed_broad_mismatches = ('hla_b', 'hla_a')
         ss.needed_split_mismatches = ('hla_dr',)
-        hla_system = HLASystem(ss)
+        hla_stats_api = HLAStatsAPI(sim_set=ss)
         DUMMY_DATE = pd.Timestamp('2000-01-01')
 
         # Read in random offers
@@ -100,7 +100,7 @@ class TestConstructMatchQuality(unittest.TestCase):
                 listing_date=DUMMY_DATE,
                 urgency_code='T',
                 sim_set=ss,
-                hla_system=hla_system
+                hla_stats_api=hla_stats_api
             )
             for pat_hla in rdr.fix_hla_string(df.PATIENT_HLA)
         ]
@@ -116,7 +116,7 @@ class TestConstructMatchQuality(unittest.TestCase):
                 donor_dcd=False,
                 weight=80,
                 hla=don_hla,
-                hla_system=hla_system,
+                hla_stats_api=hla_stats_api,
                 age=40,
                 death_cause_group='CVA',
                 malignancy=False,
@@ -153,7 +153,7 @@ class TestConstructMatchQuality(unittest.TestCase):
             if p.hla is None or d.hla is None:
                 continue
 
-            mm_dict = hla_system.count_mismatches(
+            mm_dict = hla_stats_api.count_mismatches(
                 d_hla=d.hla,
                 p_hla=p.hla
             )
@@ -212,7 +212,7 @@ class TestConstructMatchQuality(unittest.TestCase):
         # Load HLA system and match lists
         ss.needed_broad_mismatches = ('hla_b', 'hla_a',)
         ss.needed_split_mismatches = ('hla_dr',)
-        hla_system = HLASystem(ss)
+        hla_stats_api = HLAStatsAPI(sim_set=ss)
         DUMMY_DATE = pd.Timestamp('2000-01-01')
 
         # Read in random offers
@@ -267,7 +267,7 @@ class TestConstructMatchQuality(unittest.TestCase):
                 listing_date=DUMMY_DATE,
                 urgency_code='T',
                 sim_set=ss,
-                hla_system=hla_system
+                hla_stats_api=hla_stats_api
             )
             for pat_hla in rdr.fix_hla_string(df.CURRENT_PATIENT_HLA)
         ]
@@ -283,7 +283,7 @@ class TestConstructMatchQuality(unittest.TestCase):
                 donor_dcd=False,
                 weight=80,
                 hla=don_hla,
-                hla_system=hla_system,
+                hla_stats_api=hla_stats_api,
                 age=40,
                 death_cause_group='CVA',
                 malignancy=False,
@@ -321,7 +321,7 @@ class TestConstructMatchQuality(unittest.TestCase):
             if p.hla is None or d.hla is None:
                 continue
 
-            mm_dict = hla_system.count_mismatches(
+            mm_dict = hla_stats_api.count_mismatches(
                 d_hla=d.hla,
                 p_hla=p.hla
             )

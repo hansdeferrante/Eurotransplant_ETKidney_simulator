@@ -31,8 +31,7 @@ from simulator.code.entities import (
     Patient, Donor
 )
 from simulator.code.BalanceSystem import BalanceSystem
-from simulator.code.HLA.HLASystem import HLASystem
-from simulator.code.HLA.MMPSystem import MMPSystem
+from simulator.code.HLA.api import HLAStatsAPI
 from simulator.code.utils.SimResults import SimResults
 import simulator.magic_values.column_names as cn
 import simulator.magic_values.etkidney_simulator_settings as es
@@ -156,8 +155,7 @@ class SimulationRunner:
         self.sim_start_date = sim_set['SIM_START_DATE']
         self.verbose = verbose
         self.sim_rescue = sim_set.get('SIMULATE_RESCUE', False)
-        self.hla_system = HLASystem(sim_set)
-        self.mmp_system = MMPSystem(sim_set, self.hla_system)
+        self.hla_stats_api = HLAStatsAPI(sim_set=sim_set)
 
         self.match_distance_cache = MatchDistanceCache(
             sim_set
@@ -230,7 +228,7 @@ class SimulationRunner:
         # Load donors
         self.donors = load_donors(
             sim_set=self.sim_set,
-            hla_system=self.hla_system
+            hla_stats_api=self.hla_stats_api
         )
 
         # Load patients, and initialize a DataFrame with
@@ -240,8 +238,7 @@ class SimulationRunner:
         self.patients = load_patients(
             sim_set=self.sim_set,
             nrows=max_n_patients,
-            hla_system=self.hla_system,
-            mmp_system=self.mmp_system
+            hla_stats_api=self.hla_stats_api
         )
 
         # Initialize random effects for known levels.
@@ -284,9 +281,8 @@ class SimulationRunner:
                 print('Loading retransplantations')
             self.retransplantations = load_retransplantations(
                 sim_set=self.sim_set,
-                hla_system=self.hla_system,
+                hla_stats_api=self.hla_stats_api,
                 nrows=max_n_patients,
-                mmp_system=self.mmp_system
             )
             self.initialize_retransplantations()
 
@@ -421,7 +417,23 @@ class SimulationRunner:
 
         n_removed = 0
         for id_reg, pat in list(self.__dict__[pat_dict_name].items()):
-            if not pat.hla.required_loci_known:
+            pat_hla = getattr(pat, 'hla', None)
+            if pat_hla is None:
+                required_loci_known = False
+            else:
+                required_loci_known = getattr(
+                    pat_hla,
+                    'required_loci_known',
+                    None
+                )
+                if required_loci_known is None:
+                    required_loci_known = (
+                        self.hla_stats_api.matcher.prepare_typing_view(
+                            pat_hla
+                        ).required_loci_known
+                    )
+
+            if not required_loci_known:
                 n_removed += 1
 
                 del self.__dict__[pat_dict_name][id_reg]
@@ -613,7 +625,7 @@ class SimulationRunner:
                         donor=donor,
                         match_date=current_date,
                         sim_start_date=self.sim_start_date,
-                        hla_system=self.hla_system,
+                        hla_stats_api=self.hla_stats_api,
                         bal_system=self.bal_system,
                         calc_points=self.sim_set.calc_esp_score,
                         store_score_components=(
@@ -671,7 +683,7 @@ class SimulationRunner:
                         donor=donor,
                         match_date=current_date,
                         sim_start_date=self.sim_start_date,
-                        hla_system=self.hla_system,
+                        hla_stats_api=self.hla_stats_api,
                         bal_system=self.bal_system,
                         calc_points=self.sim_set.calc_etkas_score,
                         store_score_components=(

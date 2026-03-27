@@ -6,7 +6,7 @@ import simulator.magic_values.etkidney_simulator_settings as es
 import simulator.magic_values.magic_values_rules as mgr
 from simulator.code.PostTransplantPredictor import PostTransplantPredictor
 from simulator.code.matchlist.MatchList import MatchList, MatchRecord
-from simulator.code.HLA.HLASystem import HLASystem
+from simulator.code.HLA.api import HLAStatsAPI
 from simulator.code.entities import (
     Patient, Profile
 )
@@ -101,7 +101,7 @@ class MatchRecordETKAS(MatchRecord):
 
         self.type_record = 'ETKAS'
         bal_system: BalanceSystem = kwargs['bal_system']
-        hla_system: HLASystem = kwargs['hla_system']
+        hla_stats_api: HLAStatsAPI = kwargs['hla_stats_api']
         calc_points: MatchPointFunction = kwargs['calc_points']
 
         # Determine whether patient is pediatric.
@@ -128,12 +128,18 @@ class MatchRecordETKAS(MatchRecord):
         # determine whether the donor is fully homozygous, and if so,
         # the homozygosity level of the recipient
         if self.__dict__[cn.ZERO_MISMATCH]:
+            donor_prepared = hla_stats_api.matcher.prepare_typing_view(
+                self.donor.hla
+            )
             self.__dict__[cn.D_FULLY_HOMOZYGOUS] = (
-                self.donor.hla.fully_homozygous
+                donor_prepared.fully_homozygous
             )
             if self.__dict__[cn.D_FULLY_HOMOZYGOUS]:
+                patient_prepared = hla_stats_api.matcher.prepare_typing_view(
+                    self.patient.hla
+                )
                 self.__dict__[cn.R_HOMOZYGOSITY_LEVEL] = (
-                    self.patient.hla.homozygosity_level
+                    patient_prepared.homozygosity_level
                 )
             else:
                 self.__dict__[cn.R_HOMOZYGOSITY_LEVEL] = 0

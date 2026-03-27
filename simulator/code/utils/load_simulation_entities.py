@@ -8,7 +8,7 @@ Scripts to read in input files.
 @author: H.C. de Ferrante
 """
 
-from typing import List, Dict, Dict, Tuple, Any, Iterator, Hashable, Optional
+from typing import List, Dict, Tuple, Any, Iterator, Hashable, Optional
 from datetime import timedelta
 from itertools import groupby
 import pandas as pd
@@ -26,8 +26,8 @@ from simulator.code.entities import (
     Donor, Patient, Profile
 )
 from simulator.code.BalanceSystem import BalanceSystem
-from simulator.code.HLA.HLASystem import HLASystem
-from simulator.code.HLA.MMPSystem import MMPSystem
+from simulator.code.HLA.api import HLAStatsAPI
+from simulator.code.HLA.minimal_mismatch_criteria import HLAMismatchCriteria
 
 
 def _read_patients_rich(
@@ -117,8 +117,9 @@ def _read_patients_rich(
 
 
 def _rcrd_to_patient(
-    sim_set: DotDict, hla_system: HLASystem,
-    mmp_system: MMPSystem, rcrd: dict[Hashable, Any]
+    sim_set: DotDict,
+    hla_stats_api: HLAStatsAPI,
+    rcrd: dict[Hashable, Any]
 ) -> Patient:
     """Convert a record to a Patient object"""
     return Patient(
@@ -139,8 +140,7 @@ def _rcrd_to_patient(
         id_reg=rcrd[cn.ID_REGISTRATION],
         seed=sim_set.SEED,
         hla=rcrd[cn.PATIENT_HLA],
-        hla_system=hla_system,
-        mmp_system=mmp_system,
+        hla_stats_api=hla_stats_api,
         previous_wt=rcrd[cn.PREVIOUS_T],
         kidney_program=rcrd[cn.WLKI_PROGRAMME],
         date_first_dial=rcrd[cn.DATE_FIRST_DIAL]
@@ -148,8 +148,9 @@ def _rcrd_to_patient(
 
 
 def load_patients(
-    sim_set: DotDict, hla_system: HLASystem,
-    mmp_system: MMPSystem, **kwargs
+    sim_set: DotDict,
+    hla_stats_api: HLAStatsAPI,
+    **kwargs
 ) -> dict[int, Patient]:
     """Load list of patients"""
 
@@ -164,8 +165,7 @@ def load_patients(
     # that are future re-transplantations for patients not yet transplanted.
     patient_dict = {
         rcrd[cn.ID_REGISTRATION]: _rcrd_to_patient(
-            sim_set=sim_set, rcrd=rcrd, hla_system=hla_system,
-            mmp_system=mmp_system
+            sim_set=sim_set, rcrd=rcrd, hla_stats_api=hla_stats_api
         ) for rcrd in d_patients.to_dict(orient='records')
         if (
             not sim_set.SIM_RETX or not (
@@ -183,7 +183,9 @@ def load_patients(
 
 
 def load_retransplantations(
-    sim_set: DotDict, hla_system: HLASystem, mmp_system: MMPSystem, **kwargs
+    sim_set: DotDict,
+    hla_stats_api: HLAStatsAPI,
+    **kwargs
 ) -> dict[int, Patient]:
     """Load list of patients"""
 
@@ -209,8 +211,8 @@ def load_retransplantations(
     # Construct a list of patients from patient data
     patient_dict = {
         rcrd[cn.ID_REGISTRATION]: _rcrd_to_patient(
-            sim_set=sim_set, hla_system=hla_system,
-            rcrd=rcrd, mmp_system=mmp_system
+            sim_set=sim_set, hla_stats_api=hla_stats_api,
+            rcrd=rcrd
         ) for rcrd in d_patients.to_dict(orient='records')
         if rcrd[cn.TYPE_RETX] != cn.NO_RETRANSPLANT
     }
@@ -267,7 +269,7 @@ def load_nonetkasesp_balances(sim_set: DotDict) -> Dict[int, Dict[str, Any]]:
 
 def load_donors(
         sim_set: DotDict,
-        hla_system: HLASystem,
+        hla_stats_api: HLAStatsAPI,
         **kwargs
 ) -> dict[int, Donor]:
     """Load list of donors"""
@@ -307,7 +309,7 @@ def load_donors(
             donor_marginal_free_text=rcrd[cn.D_MARGINAL_FREE_TEXT],
             death_cause_group=rcrd[cn.DEATH_CAUSE_GROUP],
             diabetes=rcrd[cn.D_DIABETES],
-            hla_system=hla_system,
+            hla_stats_api=hla_stats_api,
             hla=rcrd[cn.DONOR_HLA],
             hypertension=rcrd[cn.D_HYPERTENSION],
             last_creat=rcrd[cn.D_LAST_CREAT],
@@ -341,6 +343,7 @@ def preload_profiles(
             mqs = {
                 k: rcrd[v] for k, v in es.PROFILE_HLA_MQS.items()
             }
+            mqs_criteria = HLAMismatchCriteria(mqs)
             patients[rcrd[cn.ID_REGISTRATION]]. \
                 future_statuses.add(
                     ProfileUpdate(
@@ -359,7 +362,7 @@ def preload_profiles(
                             rescue=rcrd[cn.PROFILE_RESCUE],
                             euthanasia=rcrd[cn.PROFILE_EUTHANASIA],
                             dcd=rcrd[cn.PROFILE_DCD],
-                            match_qualities=mqs,
+                            match_qualities=mqs_criteria,
                             esp=rcrd[cn.PROFILE_ESP],
                             extended_esp=rcrd[cn.PROFILE_EXTENDED_ESP]
                         ),

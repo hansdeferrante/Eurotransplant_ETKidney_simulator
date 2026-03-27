@@ -11,8 +11,8 @@ sys.path.append('./')
 from simulator.code.AcceptanceModule import AcceptanceModule
 from simulator.code.utils.load_simulation_entities import load_balances
 from simulator.code.entities import Patient, Donor
-from simulator.code.HLA.HLASystem import HLASystem, Unacceptables
-from simulator.code.HLA.MMPSystem import MMPSystem
+from simulator.code.HLA.api import HLAStatsAPI
+from simulator.code.HLA.unacceptables import Unacceptables
 import simulator.magic_values.column_names as cn
 import simulator.magic_values.etkidney_simulator_settings as es
 from simulator.code.utils.read_input_files import \
@@ -47,8 +47,7 @@ class TestCurrentAllocation(unittest.TestCase):
                 'sim_settings_test.yaml'
             )
         )
-        hla_system = HLASystem(sim_set=ss)
-        mmp_system = MMPSystem(hla_system=hla_system, sim_set=ss)
+        hla_stats_api = HLAStatsAPI(sim_set=ss)
         bal_system = load_balances(ss)
         travel_time_dict = read_travel_times()
 
@@ -88,8 +87,7 @@ class TestCurrentAllocation(unittest.TestCase):
                 type_retx=(
                     cn.NO_RETRANSPLANT
                 ),
-                hla_system=hla_system,
-                mmp_system=mmp_system,
+                hla_stats_api=hla_stats_api,
                 hla=dummy_hla,
                 date_first_dial=dummy_date - es.DAYS_PER_YEAR,
                 time_since_prev_txp=6 * 300
@@ -113,7 +111,7 @@ class TestCurrentAllocation(unittest.TestCase):
                 drug_abuse=rcrd[cn.D_DRUG_ABUSE],
                 n_kidneys_available=2,
                 hla=dummy_hla,
-                hla_system=hla_system,
+                hla_stats_api=hla_stats_api,
                 diabetes=rcrd[cn.D_DIABETES],
                 cardiac_arrest=rcrd[cn.D_CARREST],
                 last_creat=rcrd[cn.D_LAST_CREAT],
@@ -137,7 +135,7 @@ class TestCurrentAllocation(unittest.TestCase):
                     patients=[pat],
                     donor=don,
                     match_date=dummy_date,
-                    hla_system=hla_system,
+                    hla_stats_api=hla_stats_api,
                     bal_system=bal_system,
                     calc_points=ss.calc_esp_score,
                     sim_start_date=ss.SIM_START_DATE,
@@ -150,7 +148,7 @@ class TestCurrentAllocation(unittest.TestCase):
                     ],
                     donor=don,
                     match_date=dummy_date,
-                    hla_system=hla_system,
+                    hla_stats_api=hla_stats_api,
                     bal_system=bal_system,
                     calc_points=ss.calc_etkas_score,
                     sim_start_date=ss.SIM_START_DATE,
@@ -238,8 +236,7 @@ class TestCurrentAllocation(unittest.TestCase):
             simulate_random_effects=False
         )
 
-        hla_system = HLASystem(sim_set=ss)
-        mmp_system = MMPSystem(sim_set=ss, hla_system=hla_system)
+        hla_stats_api = HLAStatsAPI(sim_set=ss)
         bal_system = load_balances(ss)
 
         dummy_date = datetime(year=2000, month=1, day=1)
@@ -270,8 +267,7 @@ class TestCurrentAllocation(unittest.TestCase):
                     cn.NO_RETRANSPLANT if int(rcrd['retransplant']) == 0
                     else cn.RETRANSPLANT
                 ),
-                hla_system=hla_system,
-                mmp_system=mmp_system,
+                hla_stats_api=hla_stats_api,
                 hla=rcrd[cn.PATIENT_HLA_LITERAL],
                 date_first_dial=(
                     dummy_date -
@@ -282,7 +278,7 @@ class TestCurrentAllocation(unittest.TestCase):
             )
             pat._vpra = rcrd[cn.VPRA]
             pat.unacceptable_antigens = Unacceptables(
-                pat.hla_system,
+                ontology=pat.hla_stats_api.ontology,
                 unacc_string=rcrd.get(cn.UNACC_ANT, '')
             )
 
@@ -304,7 +300,7 @@ class TestCurrentAllocation(unittest.TestCase):
                 drug_abuse=rcrd[cn.D_DRUG_ABUSE],
                 n_kidneys_available=2,
                 hla=rcrd[cn.D_HLA_FULL],
-                hla_system=hla_system,
+                hla_stats_api=hla_stats_api,
                 diabetes=rcrd[cn.D_DIABETES],
                 cardiac_arrest=rcrd[cn.D_CARREST],
                 last_creat=rcrd[cn.D_LAST_CREAT],
@@ -328,7 +324,7 @@ class TestCurrentAllocation(unittest.TestCase):
                     patients=[pat],
                     donor=don,
                     match_date=dummy_date,
-                    hla_system=hla_system,
+                    hla_stats_api=hla_stats_api,
                     bal_system=bal_system,
                     calc_points=ss.calc_esp_score,
                     sim_start_date=ss.SIM_START_DATE,
@@ -341,7 +337,7 @@ class TestCurrentAllocation(unittest.TestCase):
                     ],
                     donor=don,
                     match_date=dummy_date,
-                    hla_system=hla_system,
+                    hla_stats_api=hla_stats_api,
                     bal_system=bal_system,
                     calc_points=ss.calc_etkas_score,
                     sim_start_date=ss.SIM_START_DATE,
@@ -401,8 +397,7 @@ class TestCurrentAllocation(unittest.TestCase):
                 'sim_settings_test.yaml'
             )
         )
-        hla_system = HLASystem(sim_set=ss)
-        mmp_system = MMPSystem(sim_set=ss, hla_system=hla_system)
+        hla_stats_api = HLAStatsAPI(sim_set=ss)
         bal_system = load_balances(ss)
 
         d_acc_records = pd.read_csv('data/test/acceptance_dkt.csv')
@@ -441,8 +436,7 @@ class TestCurrentAllocation(unittest.TestCase):
                 type_retx=(
                     cn.NO_RETRANSPLANT
                 ),
-                hla_system=hla_system,
-                mmp_system=mmp_system,
+                hla_stats_api=hla_stats_api,
                 hla=dummy_hla,
                 date_first_dial=dummy_date -
                 timedelta(days=1 * es.DAYS_PER_YEAR_FLOAT),
@@ -467,7 +461,7 @@ class TestCurrentAllocation(unittest.TestCase):
                 drug_abuse=rcrd.get(cn.D_DRUG_ABUSE, False),
                 n_kidneys_available=2,
                 hla=dummy_hla,
-                hla_system=hla_system,
+                hla_stats_api=hla_stats_api,
                 diabetes=rcrd.get(cn.D_DIABETES, False),
                 cardiac_arrest=rcrd.get(cn.D_CARREST, False),
                 last_creat=rcrd.get(cn.D_LAST_CREAT, 1),
@@ -492,7 +486,7 @@ class TestCurrentAllocation(unittest.TestCase):
                 ],
                 donor=don,
                 match_date=dummy_date,
-                hla_system=hla_system,
+                hla_stats_api=hla_stats_api,
                 bal_system=bal_system,
                 calc_points=ss.calc_etkas_score,
                 sim_start_date=ss.SIM_START_DATE,
