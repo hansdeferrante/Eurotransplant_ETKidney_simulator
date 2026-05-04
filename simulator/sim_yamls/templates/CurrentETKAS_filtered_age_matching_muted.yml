@@ -9,6 +9,8 @@ SIM_RETX: true
 PATH_DONORS: data/fake_donors_for_etkidney_simulator.csv
 PATH_PATIENTS: data/fake_patients_for_etkidney_simulator.csv
 PATH_STATUS_UPDATES: data/patient_statuses/fake_patstat{{kth_stat}}_for_etkidney_simulator.csv
+# If false, patient-file HLA remains authoritative and HLA status updates are ignored.
+LOAD_HLA_STATUS_UPDATES: true
 PATH_PROFILES: data/fake_profiles_for_etkidney_simulator.csv
 PATH_BALANCES: data/fake_donors_for_balances_for_etkidney_simulator.csv
 PATH_PROGRAM_UPDATES: data/fake_program_updates_for_etkidney_simulator.csv

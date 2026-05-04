@@ -83,6 +83,11 @@ def read_hla_match_table(input_path: str):
 def fix_hla_string(str_col: pd.Series) -> pd.Series:
     """Harmonize a HLA string column being read in"""
 
+    # Convert commas / semicolons to a space; some external uses have used
+    # comma-separated HLA typings.
+    str_col = str_col.astype(str).str.replace(',', ' ', regex=False)
+    str_col = str_col.str.replace(';', ' ', regex=False)
+
     for forbidden_character in es.HLA_FORBIDDEN_CHARACTERS:
         str_col = str_col.replace(forbidden_character, '', regex=True)
     str_col = str_col.str.upper()
@@ -96,7 +101,7 @@ def fix_hla_string(str_col: pd.Series) -> pd.Series:
         },
         regex=True
     )
-    return str_col
+    return str_col.str.strip()
 
 
 def read_patients(
@@ -658,6 +663,9 @@ def read_sim_settings(
     sim_set['check_r_pediatric'] = pediatric_patient_function_factory(
         sim_set['PEDIATRIC_CANDIDATE_AGE'],
         sim_set.get('PEDIATRIC_REQUIRES_DIALYSIS', False)
+    )
+    sim_set['LOAD_HLA_STATUS_UPDATES'] = bool(
+        sim_set.get('LOAD_HLA_STATUS_UPDATES', True)
     )
 
     return DotDict(sim_set)

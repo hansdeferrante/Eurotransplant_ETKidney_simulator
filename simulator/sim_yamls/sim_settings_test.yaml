@@ -55,6 +55,8 @@ PATH_PROFILES: data/fake_profiles_for_etkidney_simulator.csv
 PATH_PATIENTS: data/fake_patients_for_etkidney_simulator.csv
 PATH_FINAL_PATIENT_STATUS: patients_k1_s1.csv
 PATH_STATUS_UPDATES: data/patient_statuses/patstat1.csv
+# If false, patient-file HLA remains authoritative and HLA status updates are ignored.
+LOAD_HLA_STATUS_UPDATES: true
 PATH_DISCARDS: discards_k1_s1.csv
 PATH_TRANSPLANTATIONS: transplantations_k1_s1.csv
 SAVE_MATCH_LISTS: false

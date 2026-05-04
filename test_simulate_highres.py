@@ -12,7 +12,6 @@ import pandas as pd
 from simulator.code.SimulationRunner import SimulationRunner
 from simulator.code.utils.read_input_files import read_sim_settings
 import simulator.magic_values.etkidney_simulator_settings as es
-import pandas as pd
 import warnings
 warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
 
@@ -27,14 +26,16 @@ if __name__ == '__main__':
             'CurrentETKAS_actual_1_1.yml'
         )
     )
-    
+    sim_set.PATH_PATIENTS = 'data/final_data_all_high_res_african_random.csv'
+   # sim_set.PATH_DONORS = 'data/fake_donors_for_etkidney_simulator_hr.csv'
+
     # Read in simulation settings
     simulator = SimulationRunner(
         sim_set=sim_set,
         verbose=0
     )
 
-    ml = simulator.simulate_allocation(
+    simulator.simulate_allocation(
         verbose=False
     )
 

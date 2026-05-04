@@ -30,6 +30,30 @@ from simulator.code.HLA.api import HLAStatsAPI
 from simulator.code.HLA.minimal_mismatch_criteria import HLAMismatchCriteria
 
 
+def _filter_hla_status_updates(
+    d_status_updates: pd.DataFrame,
+    sim_set: DotDict,
+    stream_name: str,
+) -> pd.DataFrame:
+    """Optionally remove HLA typing status updates from a status stream."""
+    if sim_set.get("LOAD_HLA_STATUS_UPDATES", True):
+        return d_status_updates
+
+    normalized_status_type = (
+        d_status_updates.loc[:, cn.TYPE_UPDATE]
+        .astype(str)
+        .str.upper()
+        .str.lstrip("S")
+    )
+    hla_update_mask = normalized_status_type == mgr.HLA
+    n_removed = int(hla_update_mask.sum())
+    print(
+        f"Skipped {n_removed} HLA status updates from {stream_name} "
+        "because LOAD_HLA_STATUS_UPDATES is False"
+    )
+    return d_status_updates.loc[~hla_update_mask, :]
+
+
 def _read_patients_rich(
         sim_set: DotDict,
         start_date_col: Optional[str] = None,
@@ -409,6 +433,11 @@ def preload_status_updates(
             ascending=(True, True, False)
         )
     )
+    d_program_updates = _filter_hla_status_updates(
+        d_status_updates=d_program_updates,
+        sim_set=sim_set,
+        stream_name="program updates"
+    )
     d_program_updates = d_program_updates.loc[
         d_program_updates[cn.ID_REGISTRATION].isin(
             patients.keys()
@@ -426,6 +455,11 @@ def preload_status_updates(
             by=[cn.ID_REGISTRATION, cn.TSTART, cn.STATUS_DETAIL],
             ascending=(True, True, False)
         )
+    )
+    d_status_updates = _filter_hla_status_updates(
+        d_status_updates=d_status_updates,
+        sim_set=sim_set,
+        stream_name="status updates"
     )
     d_status_updates = d_status_updates.loc[
         d_status_updates[cn.ID_REGISTRATION].isin(
