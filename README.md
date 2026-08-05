@@ -96,7 +96,7 @@ TRAFOS_ETKAS:
 
 3. Changes to ESP Allocation Rules
 
-> ESP allocation tiers and age-based criteria are specified in the input yml file and in `magic_values/ESP_match_tiers.yml`. To simulate changes to ESP prioritization, these files can be modified.
+> ESP allocation tiers and age-based criteria are specified in the input yml file and in `simulator/magic_values/allocation/2021_ESP_match_tiers.yml`. During extended ESP allocation the tier order is retained, while eligible centers are selected by donor allocation area and DBD/DCD status using `simulator/magic_values/allocation/ESP_extended_alloc_elig.csv`. Candidates below the normal ESP age threshold must opt in to rescue, ESP, and extended ESP through their allocation profile.
 
 
 # Data
@@ -244,7 +244,7 @@ Settings which control how the simulation modules are initialized are:
   - `always`: Simulate always accepting offers.
 - **`ALLOW_DISCARDS`**: Boolean flag to allow/disallow discards of unaccepted kidneys during the simulation.
 - **`SIMULATE_RANDOM_EFFECTS`**: Whether to simulate random effects for acceptance predictions.
-- **`VARCOMPS_RANDOM_EFFECTS`**: Variance components for random effects in graft offer acceptance.
+- **`JOINT_RANDOM_EFFECTS`**: Whether grouping variables shared by acceptance models also share one simulated random-effect realization. Random-effect standard deviations are stored in the `random_effect_sd` column of each acceptance-model coefficient CSV; they are no longer duplicated in YAML files.
 - **`MAX_OFFERS_PER_CENTER`**: Limits on the number of offers per center for different allocation systems (separately for ESP and ETKAS).
 
 > Post-transplant module:
@@ -278,6 +278,8 @@ The YAML file also specifies settings and filenames for simulation outputs:
 - **`PATH_FINAL_PATIENT_STATUS`**: File for final patient statuses.
 - **`PATH_DISCARDS`**: File for discarded grafts (if applicable).
 - **`PATH_MATCH_LISTS`**: File to store match lists (if `SAVE_MATCH_LISTS` is `True`).
+
+Transplant and match-list output identifies fallback placements through `forced_allocation`. Saved match lists also contain `offered_to_center`, `offered_to_patient`, `center_rescue_offer`, and `patient_rescue_offer`, which distinguish the simulated offer stage and whether it occurred during rescue allocation.
 
 Example YAML templates for the case studies conducted in the accompanying paper can be found in the `simulator/sim_yamls` directory.
 

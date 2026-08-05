@@ -23,7 +23,7 @@ if __name__ == '__main__':
     sim_set = read_sim_settings(
         os.path.join(
             es.DIR_SIM_SETTINGS,
-            '2026-05-04',
+            '2026-08-05',
             'CurrentETKAS_actual_1_1.yml'
         )
     )

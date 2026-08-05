@@ -425,8 +425,6 @@ class MatchListCurrentETKAS(MatchList):
         self.match_list.sort()
         self.sorted = True
 
-        self.ext_alloc_priority = False
-
         for rank, match_record in enumerate(self.match_list):
             if type(match_record) is MatchRecordETKAS:
                 match_record.add_patient_rank(rank)
@@ -716,8 +714,10 @@ class MatchRecordESP(MatchRecord):
             return False
         elif (
             self.donor.rescue and
-            self.patient.profile and
-            (self.patient.profile.extended_esp == 0)
+            not (
+                self.patient.profile and
+                self.patient.profile.accepts_extended_esp
+            )
         ):
             return False
         else:
@@ -789,8 +789,6 @@ class MatchListESP(MatchList):
             *args,
             **kwargs
         )
-        self.ext_alloc_priority = False
-
         self.match_list.sort()
         self.sorted = True
         if travel_time_dict:
@@ -808,7 +806,7 @@ class MatchListESP(MatchList):
             self
     ) -> List[MatchRecord]:
         """Return the match list."""
-        return [m for m in self.match_list]
+        return self.match_list
 
     def return_match_info(
         self

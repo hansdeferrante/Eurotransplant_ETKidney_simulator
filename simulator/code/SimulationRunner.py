@@ -35,6 +35,7 @@ from simulator.code.HLA.api import HLAStatsAPI
 from simulator.code.utils.SimResults import SimResults
 import simulator.magic_values.column_names as cn
 import simulator.magic_values.etkidney_simulator_settings as es
+import simulator.magic_values.magic_values_rules as mgr
 
 if typing.TYPE_CHECKING:
     from simulator.code.matchlist import MatchList
@@ -219,8 +220,7 @@ class SimulationRunner:
             simulate_rescue=self.sim_rescue,
             verbose=verbose,
             simulate_random_effects=sim_set.SIMULATE_RANDOM_EFFECTS,
-            simulate_joint_random_effects=sim_set.JOINT_RANDOM_EFFECTS,
-            re_variance_components=sim_set.VARCOMPS_RANDOM_EFFECTS
+            simulate_joint_random_effects=sim_set.JOINT_RANDOM_EFFECTS
         )
         if self.verbose:
             print('Loaded acceptance module')
@@ -479,21 +479,62 @@ class SimulationRunner:
                 off.patient.__dict__.get(cn.EXIT_STATUS) != cn.FU
             }.values())
 
-            # First offer to candidates who turned down,
-            # then to centers who turned down.
+            # Use one final-stage count for every counterfactual prediction,
+            # including centers later removed by the ESP profile gate.
+            k_previous_center_rejections = len({
+                off.__dict__[cn.RECIPIENT_CENTER]
+                for off in filtered_match_records
+            })
+
+            # Prefer ESP-aged candidates who opted in to rescue, ESP, and
+            # extended ESP. If no such candidate exists, retain the broad
+            # forced-allocation fallback used by the internal simulator.
+            esp_forced_candidates = [
+                off for off in filtered_match_records
+                if (
+                    getattr(off, 'type_record', None) == mgr.ESP and
+                    off.__dict__.get(cn.PATIENT_ESP_AGED, False) and
+                    off.patient.profile and
+                    off.patient.profile.accepts_extended_esp
+                )
+            ]
+            if esp_forced_candidates:
+                filtered_match_records = esp_forced_candidates
+
+            center_probabilities = {}
+            joint_probabilities = {}
+            for off in filtered_match_records:
+                center_key = (
+                    getattr(off, 'type_record', None),
+                    off.__dict__[cn.RECIPIENT_CENTER]
+                )
+                center_probability = center_probabilities.get(center_key)
+                (
+                    center_probability,
+                    _,
+                    joint_probability
+                ) = (
+                    self.acceptance_module.
+                    calculate_forced_allocation_probabilities(
+                        offer=off,
+                        k_previous_center_rejections=(
+                            k_previous_center_rejections
+                        ),
+                        center_probability=center_probability
+                    )
+                )
+                center_probabilities[center_key] = center_probability
+                joint_probabilities[id(off)] = joint_probability
+
             filtered_match_records.sort(
-                key=lambda x: (
-                    x.__dict__.get(cn.PROB_ACCEPT_P) is not None,
-                    x.__dict__.get(cn.PROB_ACCEPT_P),
-                    x.__dict__.get(cn.PROB_ACCEPT_C) is not None,
-                    x.__dict__.get(cn.PROB_ACCEPT_C)
-                ),
+                key=lambda x: joint_probabilities[id(x)],
                 reverse=True
             )
             for mr in filtered_match_records:
                 if n_discards == 0:
                     break
                 mr.__dict__[cn.DKT] = 0
+                mr.__dict__[cn.FORCED_ALLOCATION] = 1
                 mr.set_acceptance(
                     cn.T3
                 )
@@ -644,9 +685,6 @@ class SimulationRunner:
                             ]
                         )
                     )
-                    if self.sim_set.SAVE_MATCH_LISTS:
-                        self.sim_results.save_match_list(match_list_esp)
-
                     if acc_mrs_esp:
                         for mr in acc_mrs_esp:
                             self.process_accepted_mr(
@@ -705,13 +743,6 @@ class SimulationRunner:
                         )
                     )
 
-                    # Donors of ESP-age are allocated in extended allocation.
-                    # We do not trigger rescue allocation for these ESP-aged
-                    # donors imm., but give national / regional priority.
-                    # This is a 2014 recommendation, implemented in 2021.
-                    if self.sim_set.SAVE_MATCH_LISTS:
-                        self.sim_results.save_match_list(match_list_etkas)
-
                     if accepted_mrs_etkas:
                         for mr in accepted_mrs_etkas:
                             self.process_accepted_mr(
@@ -745,6 +776,14 @@ class SimulationRunner:
                             n_discards=n_discards,
                             current_date=current_date
                         )
+
+                # Save after the final fallback decision, so forced
+                # allocation is visible in match-list output as well.
+                if self.sim_set.SAVE_MATCH_LISTS:
+                    if match_list_esp:
+                        self.sim_results.save_match_list(match_list_esp)
+                    if match_list_etkas:
+                        self.sim_results.save_match_list(match_list_etkas)
 
             elif event.type_event == cn.BAL:
                 self.bal_system.add_balance_from_txp(

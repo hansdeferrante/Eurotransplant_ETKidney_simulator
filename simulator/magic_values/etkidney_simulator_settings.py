@@ -391,6 +391,11 @@ PATH_RESCUE_COX_COEFS = (
     'simulator/magic_values/acceptance/coefs_rescue_triggered.csv'
 )
 
+# Path to centers eligible for ESP extended allocation
+PATH_ESP_EXTENDED_ALLOC_ELIGIBILITY = (
+    'simulator/magic_values/allocation/ESP_extended_alloc_elig.csv'
+)
+
 # Paths to files with travel information
 PATH_DRIVING_TIMES = (
     'simulator/magic_values/driving_distances/driving_travel_times.csv'
@@ -670,7 +675,7 @@ OUTPUT_COLS_EXITS = (
         cn.RANK, cn.D_ALLOC_CENTER, cn.D_ALLOC_REGION,
         cn.D_ALLOC_COUNTRY, cn.R_MATCH_AGE, cn.R_PED,
         cn.PATIENT_IS_HU, cn.PATIENT_SEX,
-        cn.ANY_HU, cn.ACCEPTANCE_REASON,
+        cn.ANY_HU, cn.ACCEPTANCE_REASON, cn.FORCED_ALLOCATION,
         cn.OFFERED_TO, cn.DISEASE_GROUP, cn.DISEASE_SINCE,
         cn.PROFILE_COMPATIBLE, cn.TYPE_OFFER_DETAILED,
         cn.PROB_ACCEPT_C, cn.PROB_ACCEPT_P, cn.DRAWN_PROB, cn.DRAWN_PROB_C,
@@ -697,6 +702,8 @@ MATCH_INFO_COLS = (
     cn.D_DCD, cn.D_COUNTRY, cn.D_ALLOC_COUNTRY,
     cn.D_ALLOC_REGION, cn.D_ALLOC_CENTER,
     cn.D_WEIGHT, cn.D_AGE,
+    cn.D_HBSAG, cn.D_HCVAB, cn.D_HBCAB, cn.D_SEPSIS,
+    cn.D_MENINGITIS, cn.D_MALIGNANCY, cn.D_EUTHANASIA,
     cn.TYPE_OFFER, cn.TYPE_OFFER_DETAILED,
     cn.RECIPIENT_CENTER, cn.RECIPIENT_REGION, cn.RECIPIENT_COUNTRY,
     cn.ID_RECIPIENT, cn.ID_REGISTRATION,
@@ -705,8 +712,11 @@ MATCH_INFO_COLS = (
     cn.R_PED, cn.MATCH_CRITERIUM, cn.GEOGRAPHY_MATCH,
     cn.MATCH_DISTANCE, cn.DEATH_CAUSE_GROUP, cn.D_TUMOR_HISTORY,
     cn.PATIENT_SEX, cn.PATIENT_RANK, cn.RANK, cn.ACCEPTED,
-    cn.ACCEPTANCE_REASON, cn.PROB_ACCEPT_C, cn.PROB_ACCEPT_P, cn.DRAWN_PROB,
+    cn.ACCEPTANCE_REASON, cn.FORCED_ALLOCATION,
+    cn.PROB_ACCEPT_C, cn.PROB_ACCEPT_P, cn.DRAWN_PROB,
     cn.DRAWN_PROB_C, cn.PROFILE_COMPATIBLE,
+    cn.OFFERED_TO_CENTER, cn.OFFERED_TO_PATIENT,
+    cn.CENTER_RESCUE_OFFER, cn.PATIENT_RESCUE_OFFER,
     cn.VPRA, cn.ET_MMP, cn.ET_HLA_MISMATCHFREQ,
     cn.HZ_HLA_A, cn.HZ_HLA_B, cn.HZ_HLA_DR,
     cn.PRA, cn.VALID_PRA, cn.TYPE_RECORD

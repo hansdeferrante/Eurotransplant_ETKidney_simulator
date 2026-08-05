@@ -33,21 +33,6 @@ PATIENT_ACC_POLICY: 'LR'
 ALLOW_DISCARDS: false
 SIMULATE_RANDOM_EFFECTS: true
 JOINT_RANDOM_EFFECTS: false
-VARCOMPS_RANDOM_EFFECTS:
-  etkas_rd:
-    id_registration: 0.51224
-    recipient_center: 0.40017
-    id_donor: 0.67014
-  etkas_cd:
-    id_donor: 0.63198
-    recipient_center: 0.57398
-  esp_rd:
-    id_donor: 1.69222
-    id_registration: 0.45213
-    recipient_center: 0.82223
-  esp_cd:
-    id_donor: 0.20845
-    recipient_center: 0.55113
 MAX_OFFERS_PER_CENTER:
   ESP: 10
   ETKAS: 5

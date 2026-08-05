@@ -6,7 +6,9 @@ Created on Tue Sep 13
 @author: H.C. de Ferrante
 """
 
-from typing import Optional, Tuple, Dict, Union, List, Any
+from typing import (
+    Optional, Tuple, Dict, Union, List, Any, FrozenSet, AbstractSet
+)
 from math import isnan
 from statistics import mean
 from operator import attrgetter, and_
@@ -97,7 +99,7 @@ class AcceptanceModule:
         },
         simulate_random_effects: bool = True,
         simulate_joint_random_effects: Optional[bool] = False,
-        re_variance_components: Optional[Dict[str, Dict[str, float]]] = None
+        path_esp_extended_alloc_eligibility: Optional[str] = None
     ):
         # Initialize random number generators
         rng = np.random.default_rng(seed=seed)
@@ -107,6 +109,19 @@ class AcceptanceModule:
         self.rng_random_eff = np.random.default_rng(seed=seeds[4])
 
         self.verbose = verbose if verbose else 0
+        self.simulate_random_effects = simulate_random_effects
+        self.simulate_joint_random_effects = simulate_joint_random_effects
+        self.re_varcomps: Dict[str, Dict[str, float]] = {}
+
+        if path_esp_extended_alloc_eligibility is None:
+            path_esp_extended_alloc_eligibility = (
+                es.PATH_ESP_EXTENDED_ALLOC_ELIGIBILITY
+            )
+        self.esp_extended_alloc_eligible_centers = (
+            self._read_esp_extended_alloc_eligibility(
+                path_esp_extended_alloc_eligibility
+            )
+        )
 
         # Set patient acceptance policy.
         if patient_acc_policy.lower() == 'LR'.lower():
@@ -132,9 +147,8 @@ class AcceptanceModule:
             self.rescue_bh, self.rescue_bh_stratavars = (
                 read_rescue_baseline_hazards(path_basehaz_rescueprobs)
             )
-            dict_paths_coefs.update(
-                {'coxph_rescue': path_coefs_rescueprobs}
-            )
+            dict_paths_coefs = dict(dict_paths_coefs)
+            dict_paths_coefs['coxph_rescue'] = path_coefs_rescueprobs
 
         # Initialize coefficients for the logistic regression
         if (
@@ -159,8 +173,6 @@ class AcceptanceModule:
 
         self.calculate_prob_patient_accept = self._calc_prob_accept
 
-        self.simulate_random_effects = simulate_random_effects
-        self.simulate_joint_random_effects = simulate_joint_random_effects
         self.max_patient_rejections_per_center = (
             max_recipient_driven_offers_per_center if
             max_recipient_driven_offers_per_center is not None
@@ -171,36 +183,47 @@ class AcceptanceModule:
         )
 
         if self.simulate_random_effects:
-
-            if re_variance_components is None:
-                raise Exception(
-                    f'Cannot simulate random effects, '
-                    f'without variance components'
+            expected_re_models = {
+                model_name
+                for model_name in dict_paths_coefs
+                if (
+                    patient_acc_policy.lower() == 'lr' and
+                    model_name.endswith('_rd')
+                ) or (
+                    center_acc_policy.lower() == 'lr' and
+                    model_name.endswith('_cd')
                 )
-            else:
-                self.re_varcomps = re_variance_components
+            }
+            missing_re_models = sorted(
+                expected_re_models.difference(self.re_varcomps)
+            )
+            if missing_re_models:
+                raise ValueError(
+                    'Cannot simulate random effects: no random-effect '
+                    'standard deviations found in coefficient file(s) for '
+                    f'{", ".join(missing_re_models)}'
+                )
 
-            if self.simulate_joint_random_effects:
+            if self.simulate_joint_random_effects and self.re_varcomps:
                 self.joint_re_vars = set(
                     reduce(
                         and_,
                         (sd.keys() for _, sd in self.re_varcomps.items())
                     )
                 )
-                if self.joint_re_vars:
-                    self.joint_res = {
-                        joint_re: mean(
-                            sd[joint_re]
-                            for sd in self.re_varcomps.values()
-                        )
-                        for joint_re in self.joint_re_vars
-                    }
+                self.joint_res = {
+                    joint_re: mean(
+                        sd[joint_re]
+                        for sd in self.re_varcomps.values()
+                    )
+                    for joint_re in self.joint_re_vars
+                }
                 self.realization_joint_random_effects = {
                     k: defaultdict(dict)
                     for k in self.joint_res
                 }
             else:
-                self.joint_re_vars = {}
+                self.joint_re_vars = set()
                 self.joint_res = None
                 self.realization_joint_random_effects = None
 
@@ -209,6 +232,83 @@ class AcceptanceModule:
                 for k in self.re_varcomps.keys()
                 if self.joint_res is None or k not in self.joint_res
             }
+
+    @staticmethod
+    def _read_esp_extended_alloc_eligibility(
+        input_path: str
+    ) -> Dict[Tuple[str, bool], FrozenSet[str]]:
+        """Read centers eligible for ESP extended allocation."""
+        eligibility = pd.read_csv(input_path, delimiter=',')
+        required_columns = {'region', cn.TYPE_OFFER, 'centers'}
+        missing_columns = required_columns.difference(eligibility.columns)
+        if missing_columns:
+            raise ValueError(
+                'ESP extended-allocation eligibility file is missing '
+                f'column(s): {", ".join(sorted(missing_columns))}'
+            )
+
+        if eligibility[list(required_columns)].isna().any().any():
+            raise ValueError(
+                'ESP extended-allocation eligibility file contains '
+                'missing region, type_offer, or centers values'
+            )
+
+        eligible_centers: Dict[
+            Tuple[str, bool], FrozenSet[str]
+        ] = {}
+        for row in eligibility.itertuples(index=False):
+            allocation_area = str(row.region).strip()
+            if not allocation_area:
+                raise ValueError(
+                    'ESP extended-allocation eligibility contains an '
+                    'empty region'
+                )
+            type_offer = str(getattr(row, cn.TYPE_OFFER)).strip().upper()
+            if type_offer not in {'DBD', 'DCD'}:
+                raise ValueError(
+                    'ESP extended-allocation type_offer must be DBD or '
+                    f'DCD, not {type_offer}'
+                )
+
+            key = (allocation_area, type_offer == 'DCD')
+            if key in eligible_centers:
+                raise ValueError(
+                    'Duplicate ESP extended-allocation eligibility row '
+                    f'for {allocation_area}, {type_offer}'
+                )
+
+            centers = frozenset(
+                center.strip()
+                for center in str(row.centers).split(';')
+                if center.strip()
+            )
+            if not centers:
+                raise ValueError(
+                    'ESP extended-allocation eligibility contains no '
+                    f'centers for {allocation_area}, {type_offer}'
+                )
+            eligible_centers[key] = centers
+
+        return eligible_centers
+
+    def _get_esp_extended_alloc_eligible_centers(
+        self, match_list: MatchListESP
+    ) -> FrozenSet[str]:
+        """Return eligible centers for an ESP extended-allocation pass."""
+        if not match_list.match_list:
+            return frozenset()
+
+        match_record = match_list.match_list[0].__dict__
+        donor_alloc_country = match_record[cn.D_ALLOC_COUNTRY]
+        allocation_area = (
+            match_record[cn.D_ALLOC_REGION]
+            if donor_alloc_country == mgr.GERMANY
+            else donor_alloc_country
+        )
+        return self.esp_extended_alloc_eligible_centers.get(
+            (allocation_area, bool(match_list.donor.graft_dcd)),
+            frozenset()
+        )
 
     def _generate_rescue_eventcurve(
             self, donor: Donor,
@@ -458,18 +558,12 @@ class AcceptanceModule:
 
         ESP = type(center_offer) is MatchRecordESP
 
-        if ESP:
-            center_offer.__dict__[cn.K_PREVIOUS_CENTER_REJECTIONS] = (
-                str(k_previous_center_rejections)
-                if k_previous_center_rejections < 4
-                else '4+'
+        center_offer.__dict__[cn.K_PREVIOUS_CENTER_REJECTIONS] = (
+            self._format_previous_center_rejections(
+                k_previous_center_rejections,
+                is_esp=ESP
             )
-        else:
-            center_offer.__dict__[cn.K_PREVIOUS_CENTER_REJECTIONS] = (
-                str(k_previous_center_rejections)
-                if k_previous_center_rejections < 8
-                else '8+'
-            )
+        )
         center_offer.__dict__[cn.DRAWN_PROB_C] = self.rng_center.random()
         if (
             self.calc_prob_center_willing_to_accept(
@@ -504,6 +598,9 @@ class AcceptanceModule:
         float
             The simulated random intercept.
         """
+        if not self.simulate_random_effects:
+            return 0
+
         # If simulating joint random effects, take from joint res only.
         realization_intercept = 0
         for var, sd in self.re_varcomps[selected_model].items():
@@ -666,6 +763,102 @@ class AcceptanceModule:
             realization_intercept=realization_intercept
         )
 
+    @staticmethod
+    def _format_previous_center_rejections(
+        k_previous_center_rejections: int,
+        is_esp: bool
+    ) -> str:
+        """Format a common rejection count for the selected model."""
+        upper_category = 4 if is_esp else 8
+        return (
+            str(k_previous_center_rejections)
+            if k_previous_center_rejections < upper_category
+            else f'{upper_category}+'
+        )
+
+    def calculate_forced_allocation_probabilities(
+        self,
+        offer: MatchRecord,
+        k_previous_center_rejections: int,
+        center_probability: Optional[float] = None
+    ) -> Tuple[float, float, float]:
+        """Return rescue-stage center, patient, and joint probabilities.
+
+        Existing offer-stage probabilities and model inputs are restored
+        after this counterfactual prediction. A supplied center probability
+        is reused for another candidate at the same center.
+        """
+        type_record = str(getattr(offer, 'type_record', '')).upper()
+        if type(offer) is MatchRecordESP or type_record == mgr.ESP:
+            is_esp = True
+            center_model = 'esp_cd'
+            patient_model = 'esp_rd'
+        elif type(offer) is MatchRecordETKAS or type_record == mgr.ETKAS:
+            is_esp = False
+            center_model = 'etkas_cd'
+            patient_model = 'etkas_rd'
+        else:
+            raise ValueError(
+                'Forced-allocation probabilities require an ESP or ETKAS '
+                f'match record, not {type_record or type(offer).__name__}'
+            )
+
+        offerdict = offer.__dict__
+        missing = object()
+        state_keys = (
+            cn.RESCUE,
+            cn.INTERNATIONAL_RESCUE,
+            cn.K_PREVIOUS_CENTER_REJECTIONS,
+            cn.PROB_ACCEPT_C,
+            cn.PROB_ACCEPT_P
+        )
+        original_state = {
+            key: offerdict.get(key, missing) for key in state_keys
+        }
+
+        def calculate_for_model(selected_model: str) -> float:
+            realization_intercept = (
+                self.simulate_random_intercept(
+                    offerdict=offerdict,
+                    selected_model=selected_model
+                )
+                if self.simulate_random_effects
+                else 0
+            )
+            return self._calculate_logit(
+                offer=offer,
+                which=selected_model,
+                verbose=0,
+                realization_intercept=realization_intercept
+            )
+
+        try:
+            offerdict[cn.RESCUE] = True
+            offerdict[cn.INTERNATIONAL_RESCUE] = bool(
+                offerdict.get(cn.MATCH_DISTANCE) == cn.INT
+            )
+            offerdict[cn.K_PREVIOUS_CENTER_REJECTIONS] = (
+                self._format_previous_center_rejections(
+                    k_previous_center_rejections,
+                    is_esp=is_esp
+                )
+            )
+            if center_probability is None:
+                center_probability = calculate_for_model(center_model)
+            patient_probability = calculate_for_model(patient_model)
+        finally:
+            for key, original_value in original_state.items():
+                if original_value is missing:
+                    offerdict.pop(key, None)
+                else:
+                    offerdict[key] = original_value
+
+        return (
+            center_probability,
+            patient_probability,
+            center_probability * patient_probability
+        )
+
     def _calculate_lp(
             self, item: Dict,
             which: str, verbose: Optional[int] = None,
@@ -810,6 +1003,9 @@ class AcceptanceModule:
         -------
         None
         """
+        if not self.simulate_random_effects:
+            return
+
         for selected_model, varcomps in self.re_varcomps.items():
             for var, sd in varcomps.items():
                 if not (
@@ -968,10 +1164,13 @@ class AcceptanceModule:
         if (
             n_kidneys_accepted < n_kidneys_available
         ):
-            match_list.initialize_extalloc_priorities(
-                MatchRecordESP
-            )
+            # ESP tiers already encode the order for extended allocation.
+            # Mark the transition without applying ETKAS rescue priorities.
+            match_list.mark_extended_allocation()
             match_list.donor.rescue = True
+            eligible_recipient_centers = (
+                self._get_esp_extended_alloc_eligible_centers(match_list)
+            )
 
             if acc_mrs is not None:
                 n_kidneys_available -= n_kidneys_accepted
@@ -986,7 +1185,8 @@ class AcceptanceModule:
                     rej_per_center=rej_p_ctr_esp,
                     max_patient_rejections_per_center=(
                         self.max_patient_rejections_per_center[mgr.ESP]
-                    )
+                    ),
+                    eligible_recipient_centers=eligible_recipient_centers
                 )
             )
 
@@ -1119,7 +1319,8 @@ class AcceptanceModule:
             max_offers: Optional[int] = 9999,
             max_patient_rejections_per_center: int = 9999,
             center_willing_to_accept: Optional[Dict[str, bool]] = None,
-            rej_per_center: Optional[Dict[str, int]] = None
+            rej_per_center: Optional[Dict[str, int]] = None,
+            eligible_recipient_centers: Optional[AbstractSet[str]] = None
     ) -> Tuple[
         Optional[List[MatchRecord]],
         Dict[str, bool],
@@ -1147,6 +1348,8 @@ class AcceptanceModule:
             are willing to consider the graft or not.
         rej_per_center : Dict[str, int], optional
             Rejections per center.
+        eligible_recipient_centers : AbstractSet[str], optional
+            If provided, only recipient centers in this set receive offers.
 
         Returns
         -------
@@ -1185,7 +1388,18 @@ class AcceptanceModule:
         if rej_per_center is not None:
             n_rejections_per_center.update(rej_per_center)
 
-        if match_list == 0:
+        # A carried center state can predate the final permitted patient
+        # rejection. Close it before considering any further records, so it
+        # cannot reopen in an extended allocation pass.
+        for rec_center, willing_to_accept in center_willing_to_accept.items():
+            if (
+                willing_to_accept is True and
+                n_rejections_per_center[rec_center] >=
+                max_patient_rejections_per_center
+            ):
+                center_willing_to_accept[rec_center] = False
+
+        if match_list is None or len(match_list) == 0:
             return (
                 None, center_willing_to_accept,
                 n_rejections_per_center, rescue_triggered
@@ -1222,6 +1436,15 @@ class AcceptanceModule:
             object_dict = match_object.__dict__
             rec_center = object_dict[cn.RECIPIENT_CENTER]
 
+            # An eligibility set is supplied only for ESP extended
+            # allocation. Skipped centers do not affect acceptance state,
+            # rejection counts, or random-number streams.
+            if (
+                eligible_recipient_centers is not None and
+                rec_center not in eligible_recipient_centers
+            ):
+                continue
+
             # If more than max number of offers are made, break
             # to initiate rescue.
             if (
@@ -1240,8 +1463,13 @@ class AcceptanceModule:
             ):
                 continue
 
-            # Check whether offer is profile compatible.
-            if not match_object.donor.rescue and not match_object.offerable:
+            # ESP extended allocation has its own narrow profile rule in
+            # MatchRecordESP.offerable. ETKAS rescue retains deferred profile
+            # handling.
+            check_profile = (
+                type_match_list == mgr.ESP or not match_object.donor.rescue
+            )
+            if check_profile and not match_object.offerable:
                 match_object.set_acceptance(reason=cn.FP)
                 continue
 
@@ -1252,6 +1480,10 @@ class AcceptanceModule:
 
             # 1) determine whether center is willing to accept
             if not (rec_center in center_willing_to_accept):
+                object_dict[cn.OFFERED_TO_CENTER] = 1
+                object_dict[cn.CENTER_RESCUE_OFFER] = int(
+                    match_object.donor.rescue
+                )
                 if self.determine_center_acceptance(
                     match_object,
                     k_previous_center_rejections=sum(
@@ -1294,6 +1526,10 @@ class AcceptanceModule:
                     n_rejections_per_center[rec_center] <
                     max_patient_rejections_per_center
                 ):
+                    object_dict[cn.OFFERED_TO_PATIENT] = 1
+                    object_dict[cn.PATIENT_RESCUE_OFFER] = int(
+                        match_object.donor.rescue
+                    )
                     if self.determine_patient_acceptance(match_object):
                         match_objects.append(match_object)
                         # if two kidneys are available, and none were
@@ -1335,6 +1571,11 @@ class AcceptanceModule:
                     ):
                         n_rejections_per_center[rec_center] += 1
                         count_rejections_total += 1
+                        if (
+                            n_rejections_per_center[rec_center] >=
+                            max_patient_rejections_per_center
+                        ):
+                            center_willing_to_accept[rec_center] = False
                 elif (
                     n_rejections_per_center[rec_center] >=
                     max_patient_rejections_per_center
@@ -1444,10 +1685,64 @@ class AcceptanceModule:
             recipient (rd) and center-driven (cd) allocation
         """
 
-        for k, v in dict_paths_coefs.items():
-            self.__dict__[k] = pd.read_csv(v, dtype='str')
-            self.__dict__[k]['coef'] = self.__dict__[k]['coef'].astype(float)
-            self.__dict__[k].fillna({'coef': 0}, inplace=True)
+        for model_name, path in dict_paths_coefs.items():
+            model_data = pd.read_csv(path, dtype='str')
+            if 'random_effect_sd' in model_data.columns:
+                random_effect_mask = (
+                    model_data['random_effect_sd'].notna() &
+                    model_data['random_effect_sd'].str.strip().ne('')
+                )
+            else:
+                random_effect_mask = pd.Series(
+                    False, index=model_data.index
+                )
+
+            if self.simulate_random_effects and random_effect_mask.any():
+                random_effects = model_data.loc[
+                    random_effect_mask, ['variable', 'random_effect_sd']
+                ].copy()
+                if random_effects['variable'].isna().any() or (
+                    random_effects['variable'].str.strip() == ''
+                ).any():
+                    raise ValueError(
+                        f'Random-effect rows in {path} must name a variable'
+                    )
+                if random_effects['variable'].duplicated().any():
+                    duplicates = sorted(
+                        random_effects.loc[
+                            random_effects['variable'].duplicated(False),
+                            'variable'
+                        ].unique()
+                    )
+                    raise ValueError(
+                        f'Duplicate random effects in {path}: '
+                        f'{", ".join(duplicates)}'
+                    )
+                try:
+                    standard_deviations = pd.to_numeric(
+                        random_effects['random_effect_sd'], errors='raise'
+                    )
+                except (TypeError, ValueError) as exc:
+                    raise ValueError(
+                        f'Random-effect standard deviations in {path} '
+                        'must be numeric'
+                    ) from exc
+                if (
+                    not np.isfinite(standard_deviations).all() or
+                    (standard_deviations < 0).any()
+                ):
+                    raise ValueError(
+                        f'Random-effect standard deviations in {path} '
+                        'must be finite and non-negative'
+                    )
+                self.re_varcomps[model_name] = dict(zip(
+                    random_effects['variable'], standard_deviations
+                ))
+
+            fixed_effects = model_data.loc[~random_effect_mask].copy()
+            fixed_effects['coef'] = fixed_effects['coef'].astype(float)
+            fixed_effects.fillna({'coef': 0}, inplace=True)
+            self.__dict__[model_name] = fixed_effects
 
         coef_keys = list(dict_paths_coefs.keys())
 

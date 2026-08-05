@@ -121,6 +121,9 @@ class SimResults:
         result_dict = matchr.return_match_info(
             cols=self.cols_to_save_txp
         )
+        result_dict[cn.FORCED_ALLOCATION] = int(
+            matchr.__dict__.get(cn.FORCED_ALLOCATION, 0)
+        )
 
         result_dict[cn.TIME_WAITED] = round_to_decimals(
             (
@@ -136,9 +139,8 @@ class SimResults:
             if matchr.__class__.__name__ == 'MatchRecordETKAS'
             else None
         )
-        result_dict[cn.EXT_ALLOC_TRIGGERED] = (
-            1 if matchr.__dict__.get(cn.EXT_ALLOC_PRIORITY) is not None
-            else 0
+        result_dict[cn.EXT_ALLOC_TRIGGERED] = int(
+            matchr.__dict__.get(cn.EXT_ALLOC_TRIGGERED, 0)
         )
 
         if self.broad_loci_to_save and pat.hla_stats_api:
@@ -290,9 +292,12 @@ class SimResults:
         write_every_n: int = int(1e6)
     ) -> None:
         """Save match list information"""
-        self.match_lists.extend(
-            matchl_.return_match_info()
-        )
+        for matchr in matchl_.match_list:
+            row = matchr.return_match_info()
+            row[cn.FORCED_ALLOCATION] = int(
+                matchr.__dict__.get(cn.FORCED_ALLOCATION, 0)
+            )
+            self.match_lists.append(row)
         if len(self.match_lists) >= write_every_n:
             self.match_lists_to_file()
             self.match_lists.clear()

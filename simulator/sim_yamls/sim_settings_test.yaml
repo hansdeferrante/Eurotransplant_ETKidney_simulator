@@ -67,21 +67,6 @@ PATIENT_ACC_POLICY: 'LR'
 RESULTS_FOLDER: ''
 SIMULATE_RANDOM_EFFECTS: true
 JOINT_RANDOM_EFFECTS: false
-VARCOMPS_RANDOM_EFFECTS:
-  etkas_rd:
-    id_registration: 0.51657
-    recipient_center: 0.40067
-    id_donor: 0.66371
-  etkas_cd:
-    id_donor: 0.63564
-    recipient_center: 0.57380
-  esp_rd:
-    id_donor: 0.47369
-    id_registration: 0.48121
-    recipient_center: 0.49370
-  esp_cd:
-    id_donor: 0.49677
-    recipient_center: 0.80775
 PEDIATRIC_CANDIDATE_AGE: 18
 PEDIATRIC_DONOR_AGE: 16
 USE_REAL_DM: true

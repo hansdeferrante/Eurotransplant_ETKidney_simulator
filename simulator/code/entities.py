@@ -857,10 +857,6 @@ class Patient:
         """
         if self.always_etkas_aged:
             self._etkas_eligible = True
-            if self.profile:
-                self._esp_eligible = self.profile.extended_esp
-            else:
-                self._esp_eligible = False
         elif (
             self.country_always_etkas_eligible or
             s <= self.program_choice_required_after
@@ -876,7 +872,7 @@ class Patient:
             )
         self._esp_eligible = (
             s >= self.sim_time_esp_eligible or
-            (self.profile and self.profile.extended_esp)
+            (self.profile and self.profile.accepts_extended_esp)
         )
         self._eligibility_last_assessed = s
 
@@ -1342,6 +1338,11 @@ class Profile:
         self.esp = esp
         self.extended_esp = extended_esp
 
+    @property
+    def accepts_extended_esp(self) -> bool:
+        """Return whether all extended-ESP profile opt-ins are active."""
+        return bool(self.rescue and self.esp and self.extended_esp)
+
     def _check_acceptable(
         self, don: Donor, verbose=False
     ) -> bool:
@@ -1397,7 +1398,7 @@ class Profile:
             if verbose:
                 print('Check whether ESP is accepted')
             return False
-        if esp_donor and self.extended_esp == 0:
+        if esp_donor and don.rescue and self.extended_esp == 0:
             if verbose:
                 print('Check whether extended ESP donor is accepted')
             return False

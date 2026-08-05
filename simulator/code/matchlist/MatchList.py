@@ -654,6 +654,8 @@ class MatchList:
                 distance_cache=distance_cache
             ) for pat in patients
         ]
+        self.ext_alloc_triggered = False
+        self.ext_alloc_priority = False
 
         if sort:
             self.sorted = True
@@ -669,7 +671,7 @@ class MatchList:
             self
     ) -> List[MatchRecord]:
         if self.sorted:
-            return [m for m in self.match_list]
+            return self.match_list
         else:
             raise Exception("Cannot return a match list that is not sorted!")
 
@@ -681,8 +683,15 @@ class MatchList:
             matchr.return_match_info() for matchr in self.match_list
         ]
 
+    def mark_extended_allocation(self) -> None:
+        """Mark extended allocation without changing match-list ordering."""
+        self.ext_alloc_triggered = True
+        for mr in self.match_list:
+            mr.__dict__[cn.EXT_ALLOC_TRIGGERED] = 1
+
     def initialize_extalloc_priorities(self, exp_class) -> None:
-        """Initialize extended allocation priorities."""
+        """Mark extended allocation and initialize rescue priorities."""
+        self.mark_extended_allocation()
         self.ext_alloc_priority = True
         for mr in self.match_list:
             if isinstance(mr, exp_class):
